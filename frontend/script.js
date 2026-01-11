@@ -10,8 +10,42 @@ navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
 })
 .catch(err => alert("Erreur caméra: " + err));
 
-// 2️⃣ Capture et traitement périodique
+// 2️⃣ Fonction pour envoyer zone au serveur OCR
+async function sendToOCR(crop) {
+    // Convertir crop en image base64
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = crop.width;
+    tempCanvas.height = crop.height;
+    const tempCtx = tempCanvas.getContext("2d");
+    tempCtx.putImageData(crop, 0, 0);
+
+    const dataURL = tempCanvas.toDataURL("image/jpeg");
+
+    try {
+        const response = await fetch("https://thi-creasy-lightsomely.ngrok-free.dev/ocr", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: dataURL })
+        });
+
+        const data = await response.json();
+
+        if(data.error){
+            result.innerText = "Erreur OCR: " + data.error;
+        } else {
+            result.innerText = "Matricule : " + data.matricule + "\nNote : " + data.note;
+        }
+
+    } catch (err) {
+        console.error(err);
+        result.innerText = "Erreur serveur";
+    }
+}
+
+// 3️⃣ Capture périodique de la zone
 setInterval(() => {
+    if(video.videoWidth === 0 || video.videoHeight === 0) return;
+
     // Taille du canvas = taille vidéo
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -19,23 +53,18 @@ setInterval(() => {
     // Copier l'image vidéo dans le canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Définir la zone de détection (bounding box)
+    // Zone de détection (bounding box)
     const bbox = {
-        x: canvas.width/2 - 60,  // cadre centré
-        y: 150,                  // position verticale
+        x: canvas.width/2 - 60,  // cadre centré horizontalement
+        y: 150,                  // position verticale du cadre
         width: 120,
         height: 50
     };
 
-    // Extraire la zone (crop)
+    // Extraire la zone
     const crop = ctx.getImageData(bbox.x, bbox.y, bbox.width, bbox.height);
 
-    // Pour l’instant, juste afficher la zone sur le canvas (debug)
-    // ctx.putImageData(crop, 0, 0); // optionnel
+    // Envoi au serveur OCR
+    sendToOCR(crop);
 
-    // Simuler envoi au serveur OCR
-    // Ici tu peux convertir crop en blob ou base64 pour envoi POST
-    // Ex: sendToOCR(crop);
-
-    result.innerText = "Zone prête pour OCR (numéro/note)";
-}, 500); // toutes les 0.5s
+}, 1000); // toutes les 1s
