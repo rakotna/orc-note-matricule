@@ -1,6 +1,7 @@
 body {
   text-align: center;
   font-family: Arial, sans-serif;
+  position: relative;
 }
 
 video {
@@ -18,4 +19,10 @@ video {
   left: 50%;
   transform: translateX(-50%);
   pointer-events: none;
+}
+
+p#result {
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: bold;
 }
