@@ -1,0 +1,21 @@
+body {
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+video {
+  width: 90%;
+  max-width: 400px;
+  border: 1px solid #333;
+}
+
+#overlay {
+  position: absolute;
+  border: 3px solid red;
+  width: 120px;   /* largeur zone de détection */
+  height: 50px;   /* hauteur zone de détection */
+  top: 150px;     /* position verticale du cadre */
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
