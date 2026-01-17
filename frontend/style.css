@@ -1,67 +1,194 @@
-:root { --primary: #22c55e; --bg: #0f172a; }
-body { margin: 0; background: var(--bg); font-family: -apple-system, sans-serif; color: white; overflow: hidden; }
-
-.app-container { display: flex; flex-direction: column; height: 100vh; padding: 15px; }
-
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-#status-dot { width: 12px; height: 12px; border-radius: 50%; background: #334155; transition: 0.3s; }
-
-.camera-wrapper { 
-    position: relative; width: 100%; flex-grow: 1;
-    border-radius: 20px; overflow: hidden; border: 2px solid #334155;
-    background: black;
+/* --- VARIABLES ET RESET --- */
+:root {
+    --primary: #22c55e;    /* Vert succès */
+    --warning: #eab308;    /* Jaune attente */
+    --danger: #ef4444;     /* Rouge erreur */
+    --bg-dark: #0f172a;    /* Fond sombre */
+    --card-bg: #1e293b;    /* Fond des cartes */
+    --text-main: #f8fafc;
+    --text-dim: #94a3b8;
 }
 
-#video { width: 100%; height: 100%; object-fit: cover; }
-/* Le canvas doit être exactement sur la vidéo */
-#overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-
-.scan-line {
-    position: absolute; width: 100%; height: 3px; background: var(--primary);
-    box-shadow: 0 0 15px var(--primary); animation: scan 2s infinite ease-in-out;
-    opacity: 0.6;
-}
-@keyframes scan { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
-
-.results-card { background: #1e293b; margin-top: 15px; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-.label { display: block; font-size: 11px; color: #94a3b8; font-weight: bold; margin-bottom: 5px; }
-#note-value { font-size: 48px; font-weight: 900; color: var(--primary); display: block; }
-
-/* ... (garder le début du CSS précédent) ... */
-
-.results-area { padding: 10px; flex-shrink: 0; }
-
-.note-row { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
-
-#btn-save { 
-    background: var(--primary); color: #0f172a; border: none; 
-    padding: 10px 20px; border-radius: 8px; font-weight: bold; opacity: 0.5;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent; /* Désactive le flash bleu au clic sur mobile */
 }
 
-#btn-save:not([disabled]) { opacity: 1; transform: scale(1.05); }
-
-.history-section { margin-top: 15px; border-top: 1px solid #334155; padding-top: 10px; }
-#history-list { list-style: none; padding: 0; max-height: 100px; overflow-y: auto; }
-#history-list li { 
-    background: #1e293b; margin-bottom: 5px; padding: 8px; 
-    border-radius: 5px; display: flex; justify-content: space-between;
+body {
+    font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    overflow: hidden; /* Empêche le scroll parasite du body */
 }
 
-/* Modal Style */
-.modal { 
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
-    z-index: 100; align-items: center; justify-content: center;
+/* --- STRUCTURE PRINCIPALE --- */
+.app-container {
+    width: 100%;
+    max-width: 500px; /* Taille max pour mobile */
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
 }
-.modal-content { background: #1e293b; padding: 20px; border-radius: 15px; width: 80%; }
-.modal-content input { 
-    width: 100%; padding: 15px; font-size: 24px; text-align: center; 
-    border-radius: 10px; border: 1px solid var(--primary); background: #0f172a; color: white;
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
 }
-.modal-btns { display: flex; gap: 10px; margin-top: 15px; }
-.modal-btns button { flex: 1; padding: 10px; border-radius: 8px; border: none; }
-.btn-confirm { background: var(--primary); }
+
+header h1 {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+#status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    box-shadow: 0 0 8px rgba(0,0,0,0.5);
+}
+
+/* --- CAMERA ET DESSIN --- */
+.camera-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1; /* Carré parfait pour le scan */
+    background: #000;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 2px solid #334155;
+}
+
+#video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Laisse passer les clics vers la vidéo si besoin */
+    z-index: 10;
+}
 
 #detection-count {
-    position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6);
-    padding: 4px 10px; border-radius: 20px; font-size: 12px; border: 1px solid var(--primary);
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    border: 1px solid var(--primary);
+    z-index: 20;
+}
+
+.scan-line {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: var(--primary);
+    box-shadow: 0 0 15px var(--primary);
+    animation: scanMove 2.5s infinite ease-in-out;
+    z-index: 5;
+    opacity: 0.5;
+}
+
+@keyframes scanMove {
+    0% { top: 5%; }
+    50% { top: 95%; }
+    100% { top: 5%; }
+}
+
+/* --- ZONE DE RESULTATS --- */
+.results-area {
+    margin-top: 15px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.current-scan {
+    background: var(--card-bg);
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+}
+
+.note-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+#note-value {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--primary);
+}
+
+button {
+    background: var(--primary);
+    color: #000;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+button:disabled {
+    background: #475569;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+/* --- HISTORIQUE --- */
+.history-section {
+    flex-grow: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+#history-list {
+    margin-top: 10px;
+    list-style: none;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+/* Style de défilement pour mobile */
+#history-list::-webkit-scrollbar {
+    width: 4px;
+}
+#history-list::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
 }
