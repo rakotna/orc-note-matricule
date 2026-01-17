@@ -1,4 +1,4 @@
-const API_URL = "https://VOTRE_URL_NGROK.ngrok-free.dev/detect"; // METTRE A JOUR
+const API_URL = "https://https://thi-creasy-lightsomely.ngrok-free.dev/detect"; // METTRE A JOUR
 const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
