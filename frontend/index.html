@@ -3,30 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Note Scanner Pro - IA</title>
+    <title>Note Scanner Pro</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div class="app-container">
         <header>
             <h1>📝 Note Scanner Pro</h1>
-            <div id="status-dot" title="Indicateur de connexion"></div>
+            <div id="status-dot"></div>
         </header>
 
         <div class="camera-wrapper">
             <video id="video" autoplay playsinline></video>
             <canvas id="overlay"></canvas>
-            
             <div class="scan-line"></div>
-            
             <div id="detection-count">0 Note trouvée</div>
         </div>
 
         <div class="results-area">
-            
             <div class="current-scan">
-                <span class="label">Dernière lecture IA</span>
+                <span class="label">NOTE DÉTECTÉE</span>
                 <div class="note-row">
                     <span id="note-value">---</span>
                     <button id="btn-save" disabled>✅ Enregistrer</button>
@@ -34,14 +30,11 @@
             </div>
             
             <div class="history-section">
-                <span class="label">Historique de la session</span>
-                <ul id="history-list">
-                    </ul>
+                <span class="label">HISTORIQUE</span>
+                <ul id="history-list"></ul>
             </div>
-            
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
