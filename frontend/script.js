@@ -1,4 +1,4 @@
-const API_URL = "https://NGROK_URL/detect";
+const API_URL = "https://thi-creasy-lightsomely.ngrok-free.dev/detect";
 
 const video = document.getElementById("video");
 const noteSpan = document.getElementById("note");
