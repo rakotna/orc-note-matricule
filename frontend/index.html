@@ -1,21 +1,30 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scanner OCR Manuscrit</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Scanner Notes & Matricule</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h2>Scanner de Note / Matricule</h2>
+<div class="container">
+    <h1>📄 Scanner Intelligent</h1>
+    <p>Place la zone note et matricule dans le cadre</p>
 
-<video id="video" autoplay playsinline></video>
-<canvas id="canvas" style="display:none;"></canvas>
+    <div class="camera-box">
+        <video id="video" autoplay playsinline></video>
+        <div class="overlay">
+            <div class="box matricule">Matricule</div>
+            <div class="box note">Note</div>
+        </div>
+    </div>
 
-<div id="overlay"></div>
-
-<p id="result">Résultat : Aucun</p>
+    <div class="result">
+        <p><strong>Matricule :</strong> <span id="matricule">---</span></p>
+        <p><strong>Note :</strong> <span id="note">---</span></p>
+    </div>
+</div>
 
 <script src="script.js"></script>
 </body>
