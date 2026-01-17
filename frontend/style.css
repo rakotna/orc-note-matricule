@@ -1,64 +1,24 @@
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #020617;
-    color: white;
+:root { --primary: #22c55e; --bg: #0f172a; }
+body { margin: 0; background: var(--bg); font-family: sans-serif; color: white; overflow: hidden; }
+
+.app-container { display: flex; flex-direction: column; height: 100vh; padding: 10px; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 10px; }
+
+.camera-wrapper { 
+    position: relative; width: 100%; flex-grow: 1;
+    border-radius: 20px; overflow: hidden; border: 2px solid #334155;
 }
 
-.container {
-    max-width: 400px;
-    margin: auto;
-    padding: 15px;
-    text-align: center;
+#video { width: 100%; height: 100%; object-fit: cover; }
+#overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+.scan-line {
+    position: absolute; width: 100%; height: 2px; background: var(--primary);
+    box-shadow: 0 0 15px var(--primary); animation: scan 2s infinite ease-in-out;
 }
 
-h1 {
-    margin-bottom: 5px;
-}
+@keyframes scan { 0% { top: 5%; } 50% { top: 95%; } 100% { top: 5%; } }
 
-.camera-box {
-    position: relative;
-    border: 2px solid #22c55e;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-video {
-    width: 100%;
-}
-
-.overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-}
-
-.box {
-    position: absolute;
-    border: 2px dashed #22c55e;
-    color: #22c55e;
-    font-size: 14px;
-    padding: 4px 8px;
-    border-radius: 6px;
-}
-
-.note {
-    top: 35%;
-    left: 10%;
-    width: 80%;
-    height: 20%;
-}
-
-.result {
-    margin-top: 15px;
-    background: #020617;
-    border: 1px solid #334155;
-    padding: 15px;
-    border-radius: 10px;
-}
-
-.note-value {
-    font-size: 28px;
-    font-weight: bold;
-    color: #38bdf8;
-}
+.results-card { background: #1e293b; margin-top: 15px; padding: 20px; border-radius: 15px; text-align: center; }
+.label { display: block; font-size: 12px; color: #94a3b8; letter-spacing: 1px; }
+#note-value { font-size: 42px; font-weight: 800; color: var(--primary); }
