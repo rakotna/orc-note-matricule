@@ -2,28 +2,44 @@ const API_URL = "https://https://thi-creasy-lightsomely.ngrok-free.dev/detect"; 
 const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
-const noteDisplay = document.getElementById('note-value');
+const noteValue = document.getElementById('note-value');
+const statusDot = document.getElementById('status-dot');
 
-// Initialisation caméra
+// 1. Accès caméra arrière avec haute résolution
 navigator.mediaDevices.getUserMedia({ 
-    video: { facingMode: "environment", width: 640 } 
+    video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 640 } } 
 }).then(stream => { video.srcObject = stream; });
 
-function drawBox(boxes) {
+// 2. Fonction pour dessiner les boîtes YOLO
+function drawDetections(detections) {
     ctx.clearRect(0, 0, overlay.width, overlay.height);
-    ctx.strokeStyle = "#22c55e";
-    ctx.lineWidth = 4;
-    boxes.forEach(box => {
-        // Ajustement des ratios canvas/vidéo
-        const scaleX = overlay.width / video.videoWidth;
-        const scaleY = overlay.height / video.videoHeight;
-        ctx.strokeRect(box[0]*scaleX, box[1]*scaleY, (box[2]-box[0])*scaleX, (box[3]-box[1])*scaleY);
+    
+    detections.forEach(det => {
+        const [x1, y1, x2, y2] = det.box; // Coordonnées relatives (0 à 1)
+        
+        // Conversion des coordonnées relatives en pixels selon la taille du canvas
+        const bx = x1 * overlay.width;
+        const by = y1 * overlay.height;
+        const bw = (x2 - x1) * overlay.width;
+        const bh = (y2 - y1) * overlay.height;
+
+        // Dessin du rectangle
+        ctx.strokeStyle = "#22c55e"; // Vert
+        ctx.lineWidth = 3;
+        ctx.strokeRect(bx, by, bw, bh);
+
+        // Label de confiance
+        ctx.fillStyle = "#22c55e";
+        ctx.font = "bold 14px sans-serif";
+        ctx.fillText(`NOTE ${Math.round(det.conf * 100)}%`, bx, by - 5);
     });
 }
 
-async function sendFrame() {
+// 3. Capture et envoi vers Colab
+async function captureFrame() {
     if (video.videoWidth === 0) return;
-    
+
+    // Ajuster le canvas de dessin à la taille de la vidéo affichée
     overlay.width = video.clientWidth;
     overlay.height = video.clientHeight;
 
@@ -33,19 +49,33 @@ async function sendFrame() {
     captureCanvas.getContext('2d').drawImage(video, 0, 0);
 
     captureCanvas.toBlob(async (blob) => {
-        const fd = new FormData();
-        fd.append('frame', blob);
+        const formData = new FormData();
+        formData.append('frame', blob);
 
         try {
-            const response = await fetch(API_URL, { method: 'POST', body: fd });
+            statusDot.style.background = "#eab308"; // Jaune (en cours)
+            const response = await fetch(API_URL, { method: 'POST', body: formData });
             const data = await response.json();
-            
-            if (data.note) noteDisplay.textContent = data.note;
-            if (data.boxes) drawBox(data.boxes);
-            
-        } catch (e) { console.error("Erreur Sync"); }
-    }, 'image/jpeg', 0.5);
+
+            if (data.note && data.note !== "---") {
+                if (noteValue.innerText !== data.note) {
+                    window.navigator.vibrate(50); // Vibration sur Android
+                }
+                noteValue.innerText = data.note;
+                statusDot.style.background = "#22c55e"; // Vert (succès)
+            }
+
+            // Dessiner les boîtes YOLO renvoyées par le serveur
+            if (data.detections) {
+                drawDetections(data.detections);
+            }
+
+        } catch (e) {
+            statusDot.style.background = "#ef4444"; // Rouge (erreur)
+            console.error("Erreur API");
+        }
+    }, 'image/jpeg', 0.6);
 }
 
-// Déclenchement régulier
-setInterval(sendFrame, 1000);
+// Lancement toutes les 800ms
+setInterval(captureFrame, 800);
