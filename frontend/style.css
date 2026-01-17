@@ -1,36 +1,64 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #020617;
+    color: white;
+}
+
+.container {
+    max-width: 400px;
+    margin: auto;
+    padding: 15px;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 5px;
+}
+
+.camera-box {
+    position: relative;
+    border: 2px solid #22c55e;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
 video {
-  width: 90%;
-  max-width: 400px;
-  border: 1px solid #333;
-  display: block;
-  margin: auto;
+    width: 100%;
 }
 
-#overlay, #overlayNote {
-  position: absolute;
-  border: 3px solid red;
-  pointer-events: none;
+.overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
 }
 
-#overlay { /* Matricule */
-  width: 160px;
-  height: 50px;
-  top: 130px;
-  left: 50%;
-  transform: translateX(-50%);
+.box {
+    position: absolute;
+    border: 2px dashed #22c55e;
+    color: #22c55e;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 6px;
 }
 
-#overlayNote { /* Note */
-  width: 160px;
-  height: 50px;
-  top: 200px;
-  left: 50%;
-  transform: translateX(-50%);
+.note {
+    top: 35%;
+    left: 10%;
+    width: 80%;
+    height: 20%;
 }
 
-p#result {
-  text-align: center;
-  font-size: 18px;
-  font-weight: bold;
-  margin-top: 10px;
+.result {
+    margin-top: 15px;
+    background: #020617;
+    border: 1px solid #334155;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.note-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #38bdf8;
 }
