@@ -2,29 +2,30 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Scanner de Notes</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scanner IA</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="app-container">
+        <header>
+            <h1>📝 Note Scanner Pro</h1>
+            <div id="status-dot"></div>
+        </header>
 
-<div class="container">
-    <h1>📝 Scanner de Notes</h1>
-    <p>Place la note dans le cadre</p>
+        <div class="camera-wrapper">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="overlay"></canvas>
+            <div class="scan-line"></div>
+        </div>
 
-    <div class="camera-box">
-        <video id="video" autoplay playsinline></video>
-        <div class="overlay">
-            <div class="box note">NOTE</div>
+        <div class="results-card">
+            <div class="result-item">
+                <span class="label">NOTE DÉTECTÉE</span>
+                <span id="note-value">---</span>
+            </div>
         </div>
     </div>
-
-    <div class="result">
-        <p><strong>Note détectée :</strong></p>
-        <p class="note-value" id="note">---</p>
-    </div>
-</div>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
