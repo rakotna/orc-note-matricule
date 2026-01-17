@@ -1,39 +1,58 @@
+const API_URL = "https://NGROK_URL/detect";
+
 const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
+const noteSpan = document.getElementById("note");
+
+const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d");
-const result = document.getElementById("result");
 
-// 1️⃣ Ouvrir caméra
-navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+// Accès caméra arrière
+navigator.mediaDevices.getUserMedia({
+    video: { facingMode: "environment" }
+})
 .then(stream => video.srcObject = stream)
-.catch(err => alert("Erreur caméra: " + err));
+.catch(err => alert("Erreur caméra : " + err));
 
-// 2️⃣ Fonction pour envoyer frame au backend
-async function sendFrame() {
-    if(video.videoWidth === 0) return;
+// Stabilisation (3 frames)
+let history = [];
+
+function stableNote(arr) {
+    if (arr.length < 3) return null;
+    return arr.filter(v => v === arr[0]).length >= 2 ? arr[0] : null;
+}
+
+// Capture + envoi frame
+setInterval(() => {
+    if (video.videoWidth === 0) return;
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataURL = canvas.toDataURL("image/jpeg");
+    ctx.drawImage(video, 0, 0);
 
-    try {
-        const response = await fetch("https://thi-creasy-lightsomely.ngrok-free.dev/ocr", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ image: dataURL })
-        });
-        const data = await response.json();
-        if(data.error){
-            result.innerText = "Erreur OCR: " + data.error;
-        } else {
-            result.innerText = "Matricule : " + data.matricule + "\nNote : " + data.note;
+    canvas.toBlob(async blob => {
+        const formData = new FormData();
+        formData.append("frame", blob);
+
+        try {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (data.note) {
+                history.push(data.note);
+                history = history.slice(-3);
+
+                const stable = stableNote(history);
+                if (stable) noteSpan.textContent = stable;
+            }
+
+        } catch (e) {
+            console.error("Erreur API", e);
         }
-    } catch(err){
-        console.error(err);
-        result.innerText = "Erreur serveur";
-    }
-}
 
-// 3️⃣ Envoyer frame toutes les 0.5s
-setInterval(sendFrame, 500);
+    }, "image/jpeg", 0.7);
+
+}, 1200); // 1 image / seconde
