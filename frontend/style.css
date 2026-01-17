@@ -26,3 +26,42 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 .results-card { background: #1e293b; margin-top: 15px; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
 .label { display: block; font-size: 11px; color: #94a3b8; font-weight: bold; margin-bottom: 5px; }
 #note-value { font-size: 48px; font-weight: 900; color: var(--primary); display: block; }
+
+/* ... (garder le début du CSS précédent) ... */
+
+.results-area { padding: 10px; flex-shrink: 0; }
+
+.note-row { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
+
+#btn-save { 
+    background: var(--primary); color: #0f172a; border: none; 
+    padding: 10px 20px; border-radius: 8px; font-weight: bold; opacity: 0.5;
+}
+
+#btn-save:not([disabled]) { opacity: 1; transform: scale(1.05); }
+
+.history-section { margin-top: 15px; border-top: 1px solid #334155; padding-top: 10px; }
+#history-list { list-style: none; padding: 0; max-height: 100px; overflow-y: auto; }
+#history-list li { 
+    background: #1e293b; margin-bottom: 5px; padding: 8px; 
+    border-radius: 5px; display: flex; justify-content: space-between;
+}
+
+/* Modal Style */
+.modal { 
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
+    z-index: 100; align-items: center; justify-content: center;
+}
+.modal-content { background: #1e293b; padding: 20px; border-radius: 15px; width: 80%; }
+.modal-content input { 
+    width: 100%; padding: 15px; font-size: 24px; text-align: center; 
+    border-radius: 10px; border: 1px solid var(--primary); background: #0f172a; color: white;
+}
+.modal-btns { display: flex; gap: 10px; margin-top: 15px; }
+.modal-btns button { flex: 1; padding: 10px; border-radius: 8px; border: none; }
+.btn-confirm { background: var(--primary); }
+
+#detection-count {
+    position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6);
+    padding: 4px 10px; border-radius: 20px; font-size: 12px; border: 1px solid var(--primary);
+}
