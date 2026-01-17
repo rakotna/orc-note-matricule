@@ -2,27 +2,26 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Scanner Notes & Matricule</title>
+    <title>Scanner de Notes</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-    <h1>📄 Scanner Intelligent</h1>
-    <p>Place la zone note et matricule dans le cadre</p>
+    <h1>📝 Scanner de Notes</h1>
+    <p>Place la note dans le cadre</p>
 
     <div class="camera-box">
         <video id="video" autoplay playsinline></video>
         <div class="overlay">
-            <div class="box matricule">Matricule</div>
-            <div class="box note">Note</div>
+            <div class="box note">NOTE</div>
         </div>
     </div>
 
     <div class="result">
-        <p><strong>Matricule :</strong> <span id="matricule">---</span></p>
-        <p><strong>Note :</strong> <span id="note">---</span></p>
+        <p><strong>Note détectée :</strong></p>
+        <p class="note-value" id="note">---</p>
     </div>
 </div>
 
