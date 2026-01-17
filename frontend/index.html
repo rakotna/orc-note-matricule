@@ -1,31 +1,41 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Scanner IA</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="app-container">
-        <header>
-            <h1>📝 Note Scanner Pro</h1>
-            <div id="status-dot"></div>
-        </header>
+<div class="app-container">
+    <header>
+        <h1>📝 Note Scanner Pro</h1>
+        <div id="status-dot"></div>
+    </header>
 
-        <div class="camera-wrapper">
-            <video id="video" autoplay playsinline></video>
-            <canvas id="overlay"></canvas>
-            <div class="scan-line"></div>
-        </div>
+    <div class="camera-wrapper">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="overlay"></canvas>
+        <div class="scan-line"></div>
+        
+        <div id="detection-count">0 Note trouvée</div>
+    </div>
 
-        <div class="results-card">
-            <div class="result-item">
-                <span class="label">NOTE DÉTECTÉE</span>
+    <div class="results-area">
+        <div class="current-scan">
+            <span class="label">DERNIÈRE LECTURE</span>
+            <div class="note-row">
                 <span id="note-value">---</span>
+                <button id="btn-save" disabled>✅ Enregistrer</button>
             </div>
         </div>
+        
+        <div class="history-section">
+            <span class="label">HISTORIQUE</span>
+            <ul id="history-list">
+                </ul>
+        </div>
     </div>
-    <script src="script.js"></script>
-</body>
-</html>
+</div>
+
+<div id="edit-modal" class="modal">
+    <div class="modal-content">
+        <h3>Modifier la note</h3>
+        <input type="text" id="edit-input">
+        <div class="modal-btns">
+            <button onclick="closeModal()">Annuler</button>
+            <button onclick="confirmEdit()" class="btn-confirm">Valider</button>
+        </div>
+    </div>
+</div>
