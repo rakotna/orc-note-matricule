@@ -3,36 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Scanner Note Expert</title>
+    <title>NoteScanner Pro - IA Haute Précision</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Optimisations spécifiques pour l'affichage de la précision */
+        .precision-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(34, 197, 94, 0.9);
+            color: black;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            z-index: 10;
+        }
+        
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #1e293b;
+            padding: 8px 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        #note-display {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -2px;
+        }
+
+        /* Animation de pulsation quand une note est détectée */
+        .detected-pulse {
+            animation: pulse-green 0.5s ease-in-out;
+        }
+
+        @keyframes pulse-green {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); color: #4ade80; }
+            100% { transform: scale(1); }
+        }
+    </style>
 </head>
 <body>
+
     <div class="app-container">
         <header>
-            <h1>PRO SCANNER v2</h1>
-            <div id="status-dot"></div>
+            <div class="logo-area">
+                <h1>PRO SCANNER <span style="color: var(--primary); font-weight: 400;">v2.5</span></h1>
+            </div>
+            <div id="status-dot" title="Statut de l'API"></div>
         </header>
 
+        <div class="status-bar">
+            <div class="scanner-icon">🔍</div>
+            <div id="ai-status">Prêt pour scan (Format 14.5/20)</div>
+        </div>
+
         <div class="camera-wrapper">
+            <div class="precision-badge">MODE PRÉCISION ACTIVÉ</div>
             <video id="video" autoplay playsinline></video>
             <canvas id="overlay"></canvas>
+            
+            <div class="target-box"></div>
+            
             <div class="scan-line"></div>
         </div>
 
         <div class="results-area">
-            <div class="card">
-                <span class="label">NOTE DÉTECTÉE</span>
-                <div class="display-row">
-                    <span id="note-val">---</span>
-                    <button id="btn-save" disabled>ENREGISTRER</button>
+            <div class="current-card">
+                <span class="label">DERNIÈRE LECTURE OPTIMISÉE</span>
+                <div class="main-display">
+                    <span id="note-display">---</span>
+                    <button id="btn-save" disabled>
+                        <span>ENREGISTRER</span>
+                    </button>
                 </div>
             </div>
-            <div class="card">
-                <span class="label">HISTORIQUE</span>
-                <ul id="history-list"></ul>
+
+            <div class="history-card">
+                <div class="history-header">
+                    <span class="label">HISTORIQUE DE SESSION</span>
+                    <span id="session-count">0 note</span>
+                </div>
+                <ul id="history-list">
+                    </ul>
             </div>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
