@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Scanner Précision 95%</title>
+    <title>Scanner Note Expert</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,19 +16,19 @@
         <div class="camera-wrapper">
             <video id="video" autoplay playsinline></video>
             <canvas id="overlay"></canvas>
-            <div id="detection-info">Recherche de note...</div>
+            <div class="scan-line"></div>
         </div>
 
         <div class="results-area">
-            <div class="current-card">
-                <span class="label">LECTURE IA</span>
-                <div class="main-display">
-                    <span id="note-display">---</span>
+            <div class="card">
+                <span class="label">NOTE DÉTECTÉE</span>
+                <div class="display-row">
+                    <span id="note-val">---</span>
                     <button id="btn-save" disabled>ENREGISTRER</button>
                 </div>
             </div>
-            <div class="history-card">
-                <span class="label">SESSION</span>
+            <div class="card">
+                <span class="label">HISTORIQUE</span>
                 <ul id="history-list"></ul>
             </div>
         </div>
