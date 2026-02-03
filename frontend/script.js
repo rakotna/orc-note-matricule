@@ -1,5 +1,5 @@
 // --- CONFIGURATION ---
-const API_URL = "https://thi-creasy-lightsomely.ngrok-free.app";
+const API_URL = "https://thi-creasy-lightsomely.ngrok-free.dev";
 const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
