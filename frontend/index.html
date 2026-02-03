@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NoteScanner Pro - IA Haute Précision</title>
+    <title>NoteScanner Pro - Détection en temps réel</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .precision-badge {
@@ -43,48 +43,64 @@
             50% { transform: scale(1.05); color: #4ade80; }
             100% { transform: scale(1); }
         }
+        
+        .debug-info {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #00ff00;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-family: monospace;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
     <div class="app-container">
         <header>
             <div class="logo-area">
-                <h1>PRO SCANNER <span style="color: var(--primary); font-weight: 400;">v2.5</span></h1>
+                <h1>NOTE SCANNER <span style="color: var(--primary); font-weight: 400;">PRO</span></h1>
             </div>
             <div id="status-dot" title="Statut de l'API"></div>
         </header>
         
         <div class="status-bar">
             <div class="scanner-icon">🔍</div>
-            <div id="ai-status">Prêt pour scan (Format 14.5/20)</div>
+            <div id="ai-status">Initialisation...</div>
         </div>
         
         <div class="camera-wrapper">
-            <div class="precision-badge">MODE PRÉCISION ACTIVÉ</div>
+            <div class="precision-badge">MODE DÉTECTION ACTIF</div>
             <video id="video" autoplay playsinline></video>
             <canvas id="overlay"></canvas>
-            <div class="target-box"></div>
-            <div class="scan-line"></div>
+            <div class="target-guide"></div>
         </div>
         
         <div class="results-area">
             <div class="current-card">
-                <span class="label">DERNIÈRE LECTURE OPTIMISÉE</span>
+                <span class="label">NOTE DÉTECTÉE</span>
                 <div class="main-display">
                     <span id="note-display">---</span>
                     <button id="btn-save" disabled>
-                        <span>ENREGISTRER</span>
+                        <span>SAUVEGARDER</span>
                     </button>
                 </div>
             </div>
             
             <div class="history-card">
                 <div class="history-header">
-                    <span class="label">HISTORIQUE DE SESSION</span>
+                    <span class="label">HISTORIQUE</span>
                     <span id="session-count">0 note</span>
                 </div>
                 <ul id="history-list"></ul>
             </div>
+        </div>
+        
+        <div class="debug-info" id="debug-info">
+            Statut: Initialisation...
         </div>
     </div>
     
