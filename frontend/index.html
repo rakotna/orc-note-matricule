@@ -2,71 +2,79 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLO Debug - Détection en temps réel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎯 YOLO Mobile - Notes</title>
     <style>
+        /* RESET MOBILE */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
         }
         
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
             color: white;
-            line-height: 1.6;
-            padding: 20px;
+            overscroll-behavior: none;
+            touch-action: pan-x pan-y;
+            height: 100vh;
+            overflow: hidden;
         }
         
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 20px;
+        /* CONTAINER PRINCIPAL */
+        .app-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
         
-        header {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 20px 0;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #1e293b;
+        /* HEADER MOBILE */
+        .mobile-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 100;
         }
         
-        h1 {
-            font-size: 2.2rem;
-            background: linear-gradient(90deg, #00ff00, #3b82f6);
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .app-title {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00ff88, #00ccff);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            margin-bottom: 10px;
         }
         
-        /* CAMÉRA */
+        /* CAMÉRA MOBILE */
         .camera-section {
-            background: #1e293b;
-            border-radius: 16px;
-            padding: 15px;
-            border: 1px solid #334155;
+            flex: 1;
             position: relative;
+            background: #000;
+            overflow: hidden;
         }
         
         .camera-container {
+            width: 100%;
+            height: 100%;
             position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            aspect-ratio: 4/3;
-            background: #000;
-            margin-bottom: 15px;
         }
         
         #video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Miroir pour caméra frontale */
+            transform: scaleX(-1);
         }
         
         #overlay {
@@ -78,19 +86,31 @@
             pointer-events: none;
         }
         
-        /* INDICATEUR EN DIRECT */
-        .live-indicator {
+        /* HUD MOBILE */
+        .hud {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+        
+        .hud-item {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            z-index: 10;
+        }
+        
+        .live-indicator {
+            background: rgba(239, 68, 68, 0.3);
+            border: 1px solid rgba(239, 68, 68, 0.5);
         }
         
         .live-dot {
@@ -101,666 +121,658 @@
             animation: pulse 1s infinite;
         }
         
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+        .stats-indicator {
+            background: rgba(59, 130, 246, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.5);
         }
         
-        /* CONTRÔLES */
-        .controls {
+        /* FPS COUNTER */
+        .fps-counter {
+            position: absolute;
+            bottom: 80px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            z-index: 10;
+        }
+        
+        /* INFO BULLE */
+        .info-bubble {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            text-align: center;
+            max-width: 90%;
+            z-index: 20;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.1);
+        }
+        
+        /* CONTRÔLES MOBILE */
+        .mobile-controls {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
             display: flex;
-            flex-wrap: wrap;
             gap: 10px;
-            margin-bottom: 15px;
+            z-index: 10;
         }
         
-        .btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
+        .mobile-btn {
             flex: 1;
-            min-width: 120px;
+            background: rgba(59, 130, 246, 0.9);
+            border: none;
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
         }
         
-        .btn:hover {
-            background: #2563eb;
-            transform: translateY(-2px);
+        .mobile-btn:active {
+            transform: scale(0.95);
+            opacity: 0.8;
         }
         
-        .btn.active {
-            background: #00ff00;
+        .mobile-btn.active {
+            background: rgba(0, 255, 136, 0.9);
             color: #000;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
         }
         
-        .btn-danger {
-            background: #ef4444;
+        .mobile-btn.danger {
+            background: rgba(239, 68, 68, 0.9);
         }
         
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-        
-        /* PANEL DROIT */
-        .right-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        .card {
-            background: #1e293b;
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid #334155;
-        }
-        
-        .card-title {
-            font-size: 1.1rem;
-            color: #00ff00;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #334155;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        /* STATISTIQUES */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        
-        .stat-item {
-            background: #0f172a;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #00ff00;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 0.8rem;
-            color: #94a3b8;
-        }
-        
-        /* DÉTECTIONS */
-        .detections-list {
-            max-height: 400px;
+        /* PANEL DÉTECTIONS (Drawer) */
+        .detections-drawer {
+            position: fixed;
+            bottom: -80%;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(30px);
+            border-radius: 30px 30px 0 0;
+            padding: 20px 15px;
+            z-index: 1000;
+            transition: bottom 0.3s ease;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+            max-height: 80vh;
             overflow-y: auto;
         }
         
-        .detection-item {
-            background: #0f172a;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 10px;
-            border-left: 4px solid #00ff00;
-            transition: all 0.2s;
+        .detections-drawer.open {
+            bottom: 0;
         }
         
-        .detection-item:hover {
-            transform: translateX(5px);
-            background: #1a2336;
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .drawer-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #00ff88;
+        }
+        
+        .detections-count {
+            background: #00ff88;
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        /* LISTE DÉTECTIONS */
+        .detections-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .detection-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 15px;
+            border-left: 4px solid #00ff88;
         }
         
         .detection-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
         
-        .detection-class {
-            font-weight: bold;
-            font-size: 1rem;
+        .detection-name {
+            font-weight: 600;
+            font-size: 16px;
         }
         
         .detection-confidence {
-            background: #00ff00;
-            color: black;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: bold;
+            background: #00ff88;
+            color: #000;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 12px;
         }
         
         .detection-details {
-            font-size: 0.85rem;
-            color: #94a3b8;
-            margin-top: 5px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
             display: flex;
+            gap: 10px;
             flex-wrap: wrap;
-            gap: 8px;
         }
         
-        /* FPS COUNTER */
-        .fps-counter {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            z-index: 10;
-        }
-        
-        /* RESPONSIVE */
-        @media (max-width: 900px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        /* LOADER */
-        .loader {
-            display: none;
+        /* LOADER MOBILE */
+        .mobile-loader {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 20;
+            display: none;
+            z-index: 50;
         }
         
-        .loader.active {
+        .mobile-loader.active {
             display: block;
         }
         
-        .spinner {
-            width: 40px;
-            height: 40px;
+        .loader-circle {
+            width: 60px;
+            height: 60px;
             border: 4px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
-            border-top-color: #00ff00;
+            border-top-color: #00ff88;
             animation: spin 1s linear infinite;
+        }
+        
+        /* TOAST NOTIFICATIONS */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 12px 20px;
+            border-radius: 15px;
+            font-size: 14px;
+            z-index: 2000;
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        /* ANIMATIONS */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
         
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
         
-        /* INFO BULLE */
-        .info-bubble {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            z-index: 10;
-            max-width: 80%;
+        /* RESPONSIVE */
+        @media (max-width: 480px) {
+            .mobile-btn {
+                padding: 12px;
+                font-size: 14px;
+            }
+            
+            .detections-drawer {
+                padding: 15px 10px;
+            }
+        }
+        
+        /* SAFE AREAS */
+        .safe-area-top {
+            padding-top: env(safe-area-inset-top);
+        }
+        
+        .safe-area-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🎯 YOLO Détection Temps Réel</h1>
-            <p style="color: #94a3b8;">Détection dynamique avec YOLOv8 - Classe: Notes</p>
-        </header>
+    <div class="app-container">
+        <!-- HEADER -->
+        <div class="mobile-header safe-area-top">
+            <div class="header-content">
+                <div class="app-title">🎯 YOLO Mobile</div>
+                <div class="hud-item stats-indicator">
+                    <span>📊</span>
+                    <span id="stats-display">0 détections</span>
+                </div>
+            </div>
+        </div>
         
-        <!-- SECTION GAUCHE : CAMÉRA -->
+        <!-- CAMÉRA -->
         <div class="camera-section">
-            <!-- Indicateur en direct -->
-            <div class="live-indicator">
-                <div class="live-dot"></div>
-                <span>EN DIRECT</span>
-            </div>
-            
-            <!-- Info bulle -->
-            <div class="info-bubble" id="info-bubble">
-                🔍 Pointage vers une note...
-            </div>
-            
-            <!-- Caméra -->
             <div class="camera-container">
                 <video id="video" autoplay playsinline></video>
                 <canvas id="overlay"></canvas>
                 
-                <!-- Loader -->
-                <div class="loader" id="loader">
-                    <div class="spinner"></div>
+                <!-- HUD -->
+                <div class="hud">
+                    <div class="hud-item live-indicator">
+                        <div class="live-dot"></div>
+                        <span>EN DIRECT</span>
+                    </div>
                 </div>
                 
-                <!-- FPS counter -->
+                <!-- INFO -->
+                <div class="info-bubble" id="info-bubble">
+                    🎯 Prêt à détecter
+                </div>
+                
+                <!-- FPS -->
                 <div class="fps-counter">
-                    FPS: <span id="fps-display">0</span> | 
-                    Détections: <span id="detections-display">0</span>
+                    FPS: <span id="fps-display">0</span>
                 </div>
-            </div>
-            
-            <!-- Contrôles -->
-            <div class="controls">
-                <button class="btn" onclick="startDetection()" id="btn-start">
-                    ▶️ Démarrer
-                </button>
-                <button class="btn btn-danger" onclick="stopDetection()" id="btn-stop" disabled>
-                    ⏹️ Arrêter
-                </button>
-                <button class="btn" onclick="singleDetection()" id="btn-single">
-                    📸 Capture unique
-                </button>
-                <button class="btn" onclick="clearOverlay()">
-                    🧹 Effacer
-                </button>
-            </div>
-            
-            <!-- Paramètres -->
-            <div style="margin-top: 15px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <label style="font-size: 0.9rem;">Fréquence:</label>
-                    <select id="frequency" style="background: #0f172a; color: white; border: 1px solid #334155; padding: 5px; border-radius: 5px;">
-                        <option value="500">0.5s (Rapide)</option>
-                        <option value="1000" selected>1s (Normal)</option>
-                        <option value="2000">2s (Lent)</option>
-                        <option value="5000">5s (Très lent)</option>
-                    </select>
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <label style="font-size: 0.9rem;">Seuil confiance:</label>
-                    <input type="range" id="confidence-slider" min="10" max="100" value="30" style="flex: 1;">
-                    <span id="confidence-value" style="font-weight: bold;">30%</span>
+                
+                <!-- LOADER -->
+                <div class="mobile-loader" id="loader">
+                    <div class="loader-circle"></div>
                 </div>
             </div>
         </div>
         
-        <!-- SECTION DROITE : INFORMATIONS -->
-        <div class="right-panel">
-            <!-- STATISTIQUES -->
-            <div class="card">
-                <div class="card-title">
-                    <span>📊 Statistiques temps réel</span>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value" id="stat-fps">0</div>
-                        <div class="stat-label">FPS détection</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="stat-latency">0ms</div>
-                        <div class="stat-label">Latence YOLO</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="stat-total">0</div>
-                        <div class="stat-label">Détections totales</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="stat-active">0</div>
-                        <div class="stat-label">Actives maintenant</div>
-                    </div>
-                </div>
+        <!-- CONTRÔLES -->
+        <div class="mobile-controls safe-area-bottom">
+            <button class="mobile-btn" id="btn-start" onclick="startDetection()">
+                ▶️ Démarrer
+            </button>
+            <button class="mobile-btn danger" id="btn-stop" onclick="stopDetection()" disabled>
+                ⏹️ Arrêter
+            </button>
+            <button class="mobile-btn" id="btn-toggle-drawer" onclick="toggleDrawer()">
+                📋 Liste
+            </button>
+        </div>
+        
+        <!-- DRAWER DÉTECTIONS -->
+        <div class="detections-drawer" id="detectionsDrawer">
+            <div class="drawer-header">
+                <div class="drawer-title">📋 Détections actives</div>
+                <div class="detections-count" id="detectionsCount">0</div>
             </div>
-            
-            <!-- DÉTECTIONS ACTIVES -->
-            <div class="card">
-                <div class="card-title">
-                    <span>📦 Détections actives (<span id="detections-count">0</span>)</span>
-                </div>
-                <div class="detections-list" id="detections-list">
-                    <div style="text-align: center; color: #64748b; padding: 20px;">
-                        En attente de détections...
-                    </div>
-                </div>
-            </div>
-            
-            <!-- LOGS -->
-            <div class="card">
-                <div class="card-title">
-                    <span>📝 Logs système</span>
-                </div>
-                <div style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
-                    <div id="logs"></div>
-                </div>
-            </div>
-            
-            <!-- INFO MODÈLE -->
-            <div class="card">
-                <div class="card-title">
-                    <span>🤖 Info modèle</span>
-                </div>
-                <div style="font-size: 0.9rem;">
-                    <div style="margin-bottom: 5px;">
-                        <strong>Classe:</strong> <span id="model-class">Notes</span>
-                    </div>
-                    <div style="margin-bottom: 5px;">
-                        <strong>GPU:</strong> <span id="model-gpu">Tesla T4</span>
-                    </div>
-                    <div>
-                        <strong>URL API:</strong> 
-                        <div style="word-break: break-all; font-size: 0.8rem; color: #94a3b8; margin-top: 5px;" id="api-url">
-                            Chargement...
-                        </div>
-                    </div>
-                </div>
+            <div class="detections-list" id="detectionsList">
+                <!-- Les détections seront ajoutées ici -->
             </div>
         </div>
+        
+        <!-- TOAST -->
+        <div class="toast" id="toast"></div>
     </div>
 
     <script>
-        // ================================================================
-        // CONFIGURATION
-        // ================================================================
+        // ============================================
+        // CONFIGURATION MOBILE
+        // ============================================
         const API_URL = "https://thi-creasy-lightsomely.ngrok-free.dev";
+        const MOBILE_CONFIG = {
+            detectionInterval: 1000, // 1 seconde
+            minConfidence: 50, // 50% minimum
+            maxBoxWidth: 0.9, // 90% de l'écran max
+            maxBoxHeight: 0.9
+        };
         
-        // ================================================================
-        // ÉLÉMENTS DOM
-        // ================================================================
+        // ============================================
+        // ÉLÉMENTS DOM MOBILE
+        // ============================================
         const video = document.getElementById('video');
         const overlay = document.getElementById('overlay');
         const ctx = overlay.getContext('2d');
-        const loader = document.getElementById('loader');
         const infoBubble = document.getElementById('info-bubble');
-        const detectionsList = document.getElementById('detections-list');
-        const detectionsCount = document.getElementById('detections-count');
-        const logsContainer = document.getElementById('logs');
+        const detectionsList = document.getElementById('detectionsList');
+        const detectionsCount = document.getElementById('detectionsCount');
         const fpsDisplay = document.getElementById('fps-display');
-        const detectionsDisplay = document.getElementById('detections-display');
+        const statsDisplay = document.getElementById('stats-display');
+        const loader = document.getElementById('loader');
+        const toast = document.getElementById('toast');
+        const detectionsDrawer = document.getElementById('detectionsDrawer');
         
-        // Statistiques
-        const statFps = document.getElementById('stat-fps');
-        const statLatency = document.getElementById('stat-latency');
-        const statTotal = document.getElementById('stat-total');
-        const statActive = document.getElementById('stat-active');
-        
-        // Contrôles
+        // Boutons
         const btnStart = document.getElementById('btn-start');
         const btnStop = document.getElementById('btn-stop');
-        const btnSingle = document.getElementById('btn-single');
-        const confidenceSlider = document.getElementById('confidence-slider');
-        const confidenceValue = document.getElementById('confidence-value');
-        const frequencySelect = document.getElementById('frequency');
         
-        // ================================================================
-        // VARIABLES GLOBALES
-        // ================================================================
+        // ============================================
+        // VARIABLES MOBILE
+        // ============================================
         let isStreaming = false;
         let isProcessing = false;
         let detectionActive = false;
         let detectionInterval = null;
+        let currentDetections = [];
         let frameCount = 0;
         let lastFpsTime = Date.now();
         let fps = 0;
-        let totalDetections = 0;
-        let lastDetectionTime = 0;
-        let currentDetections = [];
+        let lastToastTime = 0;
         
-        // ================================================================
-        // INITIALISATION
-        // ================================================================
-        async function initialize() {
-            console.log("🚀 Initialisation du système...");
+        // ============================================
+        // INITIALISATION MOBILE
+        // ============================================
+        async function initializeMobile() {
+            showToast("📱 Initialisation...");
             
-            // Afficher l'URL API
-            document.getElementById('api-url').textContent = API_URL;
-            
-            // Initialiser la caméra
-            await initializeCamera();
-            
-            // Tester la connexion API
-            await testAPI();
-            
-            // Mettre à jour l'interface
-            updateInfoBubble("✅ Système prêt - Cliquez sur 'Démarrer'");
-            addLog("Système initialisé");
+            try {
+                // 1. Test API
+                const apiHealthy = await testMobileAPI();
+                if (!apiHealthy) {
+                    showToast("❌ API non disponible", true);
+                    return;
+                }
+                
+                // 2. Caméra mobile
+                const cameraReady = await initializeMobileCamera();
+                if (!cameraReady) {
+                    showToast("📷 Utilisation mode démo");
+                    setupDemoMode();
+                }
+                
+                // 3. Interface
+                updateInfoBubble("✅ Prêt à détecter");
+                showToast("✅ Système prêt");
+                
+                // Démarrer auto après 2s
+                setTimeout(() => {
+                    if (isStreaming) {
+                        startDetection();
+                    }
+                }, 2000);
+                
+            } catch (error) {
+                console.error("Init error:", error);
+                showToast("❌ Erreur initialisation", true);
+            }
         }
         
-        // ================================================================
-        // INITIALISATION CAMÉRA
-        // ================================================================
-        async function initializeCamera() {
+        // ============================================
+        // CAMÉRA MOBILE
+        // ============================================
+        async function initializeMobileCamera() {
             try {
-                updateInfoBubble("📷 Initialisation de la caméra...");
-                
-                const stream = await navigator.mediaDevices.getUserMedia({
+                // Préférences mobile
+                const constraints = {
                     video: {
-                        facingMode: "environment",
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        facingMode: { ideal: "environment" },
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 },
+                        frameRate: { ideal: 30, max: 60 }
                     }
-                });
+                };
                 
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 
-                await new Promise((resolve) => {
+                return new Promise((resolve) => {
                     video.onloadedmetadata = () => {
                         overlay.width = video.videoWidth;
                         overlay.height = video.videoHeight;
                         isStreaming = true;
-                        addLog(`Caméra initialisée: ${video.videoWidth}x${video.videoHeight}`);
-                        resolve();
+                        
+                        // Ajuster pour mobile
+                        const aspect = video.videoWidth / video.videoHeight;
+                        console.log(`📱 Caméra: ${video.videoWidth}x${video.videoHeight} (${aspect.toFixed(2)})`);
+                        
+                        resolve(true);
                     };
+                    
+                    video.onerror = () => resolve(false);
                 });
                 
-                return true;
-                
             } catch (error) {
-                isStreaming = false;
-                updateInfoBubble("❌ Erreur caméra");
-                addLog(`Erreur caméra: ${error.message}`);
-                
-                // Mode démo
-                showDemoMode();
+                console.warn("Caméra mobile error:", error);
                 return false;
             }
         }
         
-        function showDemoMode() {
-            addLog("Mode démo activé");
-            overlay.width = 640;
-            overlay.height = 480;
-            isStreaming = true;
-            
-            // Dessiner un exemple
-            drawDemoDetection();
-        }
-        
-        function drawDemoDetection() {
-            ctx.clearRect(0, 0, overlay.width, overlay.height);
-            
-            // Exemple de boîte
-            const x = overlay.width * 0.3;
-            const y = overlay.height * 0.3;
-            const width = overlay.width * 0.4;
-            const height = overlay.height * 0.4;
-            
-            ctx.strokeStyle = "#00ff00";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(x, y, width, height);
-            
-            ctx.fillStyle = "#00ff00";
-            ctx.font = "bold 20px Arial";
-            ctx.fillText("📝 Notes 95%", x + 10, y - 10);
-            
-            ctx.fillStyle = "rgba(0, 255, 0, 0.1)";
-            ctx.fillRect(x, y, width, height);
-        }
-        
-        // ================================================================
-        // TEST API
-        // ================================================================
-        async function testAPI() {
-            addLog("Test de connexion API...");
-            
+        // ============================================
+        // API MOBILE
+        // ============================================
+        async function testMobileAPI() {
             try {
-                const response = await fetch(`${API_URL}/health`);
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                
                 const data = await response.json();
+                console.log("📡 API mobile:", data);
                 
-                // Mettre à jour les infos modèle
-                document.getElementById('model-class').textContent = 
-                    data.class_names ? Object.values(data.class_names).join(', ') : 'Notes';
-                document.getElementById('model-gpu').textContent = 
-                    data.gpu ? 'Tesla T4 (GPU)' : 'CPU';
+                if (data.mobile) {
+                    showToast(`✅ API Mobile v${data.version}`);
+                }
                 
-                addLog(`✅ API connectée - ${data.classes_count || 1} classe(s)`);
-                return true;
+                return data.status === "online";
                 
             } catch (error) {
-                addLog(`❌ Erreur API: ${error.message}`);
+                console.error("API test error:", error);
                 return false;
             }
         }
         
-        // ================================================================
-        // DÉTECTION PRINCIPALE
-        // ================================================================
-        async function detectFrame() {
+        // ============================================
+        // DÉTECTION MOBILE
+        // ============================================
+        async function detectFrameMobile() {
             if (!isStreaming || isProcessing || !detectionActive) return;
             
             isProcessing = true;
             frameCount++;
+            loader.classList.add('active');
             
             try {
-                // Afficher le loader
-                loader.classList.add('active');
-                
-                // Capturer la frame
-                const imageBlob = await captureFrame();
+                // 1. Capturer frame optimisée
+                const imageBlob = await captureMobileFrame();
                 if (!imageBlob) return;
                 
-                // Envoyer au backend
+                // 2. Envoyer à l'API mobile
                 const startTime = performance.now();
-                const result = await sendDetectionRequest(imageBlob);
+                const result = await sendMobileDetection(imageBlob);
                 const processingTime = performance.now() - startTime;
                 
-                if (result) {
-                    // Traiter les résultats
-                    processDetectionResult(result, processingTime);
-                    lastDetectionTime = Date.now();
+                // 3. Traiter résultats
+                if (result && result.success) {
+                    processMobileDetections(result, processingTime);
                 }
                 
+                // 4. Mettre à jour FPS
+                updateMobileFPS(processingTime);
+                
             } catch (error) {
-                addLog(`❌ Erreur: ${error.message}`);
-                updateInfoBubble("❌ Erreur de détection");
+                console.error("Détection error:", error);
+                showToast("❌ Erreur détection", true);
             } finally {
                 isProcessing = false;
                 loader.classList.remove('active');
             }
         }
         
-        async function captureFrame() {
-            if (!isStreaming || video.readyState !== 4) return null;
+        async function captureMobileFrame() {
+            if (!isStreaming) return null;
             
             const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const tempCtx = canvas.getContext('2d');
             
-            // Miroir horizontal pour correspondre à l'affichage
-            tempCtx.save();
-            tempCtx.scale(-1, 1);
-            tempCtx.translate(-canvas.width, 0);
-            tempCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            tempCtx.restore();
+            // Optimisation mobile
+            const maxSize = 1024;
+            let width = video.videoWidth;
+            let height = video.videoHeight;
             
+            if (width > maxSize || height > maxSize) {
+                const ratio = maxSize / Math.max(width, height);
+                width = Math.floor(width * ratio);
+                height = Math.floor(height * ratio);
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, width, height);
+            
+            // Qualité réduite pour mobile
             return new Promise((resolve) => {
-                canvas.toBlob(resolve, 'image/jpeg', 0.9);
+                canvas.toBlob(resolve, 'image/jpeg', 0.7);
             });
         }
         
-        async function sendDetectionRequest(imageBlob) {
+        async function sendMobileDetection(imageBlob) {
             const formData = new FormData();
-            formData.append('frame', imageBlob, 'frame.jpg');
+            formData.append('frame', imageBlob, 'mobile_frame.jpg');
             
-            try {
-                const response = await fetch(`${API_URL}/detect`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 'ngrok-skip-browser-warning': 'true' }
-                });
-                
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return await response.json();
-                
-            } catch (error) {
-                throw error;
-            }
+            const response = await fetch(`${API_URL}/detect`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return await response.json();
         }
         
-        // ================================================================
-        // TRAITEMENT DES RÉSULTATS
-        // ================================================================
-        function processDetectionResult(result, processingTime) {
-            // Mettre à jour les détections courantes
-            currentDetections = result.detections || [];
+        // ============================================
+        // TRAITEMENT RÉSULTATS MOBILE
+        // ============================================
+        function processMobileDetections(result, processingTime) {
+            const detections = result.detections || [];
             
-            // Mettre à jour les statistiques
-            updateStatistics(result, processingTime);
+            // Filtrer par confiance
+            const filteredDetections = detections.filter(d => 
+                d.confidence >= MOBILE_CONFIG.minConfidence &&
+                d.width < overlay.width * MOBILE_CONFIG.maxBoxWidth &&
+                d.height < overlay.height * MOBILE_CONFIG.maxBoxHeight
+            );
             
-            // Mettre à jour l'affichage
-            updateDetectionsList(currentDetections);
+            currentDetections = filteredDetections;
             
-            // Dessiner sur l'overlay
-            drawDetections(currentDetections);
+            // Mettre à jour l'interface
+            updateDetectionsListMobile(filteredDetections);
+            drawMobileDetections(filteredDetections);
             
-            // Mettre à jour le FPS
-            updateFPS();
+            // Stats
+            statsDisplay.textContent = `${filteredDetections.length} détection(s)`;
             
-            // Log
-            addLog(`✅ ${currentDetections.length} détection(s) en ${processingTime.toFixed(0)}ms`);
-            
-            // Mettre à jour l'info bulle
-            if (currentDetections.length > 0) {
-                const bestDetection = currentDetections[0];
-                updateInfoBubble(`🎯 ${bestDetection.class_name} ${bestDetection.confidence}%`);
+            // Info bulle
+            if (filteredDetections.length > 0) {
+                const best = filteredDetections[0];
+                updateInfoBubble(`🎯 ${best.class_name} ${best.confidence}%`);
             } else {
-                updateInfoBubble("🔍 Recherche de notes...");
+                updateInfoBubble("🔍 Recherche...");
             }
+            
+            // Log léger
+            console.log(`📊 ${filteredDetections.length} détections en ${processingTime.toFixed(0)}ms`);
         }
         
-        function updateStatistics(result, processingTime) {
-            const stats = result.statistics || {};
-            
-            // Mettre à jour les stats affichées
-            statLatency.textContent = `${stats.yolo_time_ms || processingTime.toFixed(0)}ms`;
-            statActive.textContent = currentDetections.length;
-            
-            // Incrémenter le total
-            totalDetections += currentDetections.length;
-            statTotal.textContent = totalDetections;
-            
-            // Mettre à jour l'affichage FPS
-            fpsDisplay.textContent = fps;
-            detectionsDisplay.textContent = currentDetections.length;
-        }
-        
-        function updateFPS() {
+        function updateMobileFPS(processingTime) {
             const now = Date.now();
             const elapsed = now - lastFpsTime;
             
             if (elapsed >= 1000) {
                 fps = Math.round((frameCount * 1000) / elapsed);
-                statFps.textContent = fps;
+                fpsDisplay.textContent = fps;
                 frameCount = 0;
                 lastFpsTime = now;
             }
         }
         
-        function updateDetectionsList(detections) {
+        // ============================================
+        // DESSIN MOBILE
+        // ============================================
+        function drawMobileDetections(detections) {
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            
+            if (detections.length === 0) return;
+            
+            // Style mobile
+            const styles = {
+                high: { color: '#00ff88', width: 3, opacity: 0.3 },
+                medium: { color: '#ffcc00', width: 2, opacity: 0.2 },
+                low: { color: '#ff4444', width: 1, opacity: 0.1 }
+            };
+            
+            detections.forEach(det => {
+                const box = det.box_pixels || calculateBoxFromNormalized(det.box);
+                const [x1, y1, x2, y2] = box;
+                
+                // Style selon confiance
+                let style;
+                if (det.confidence >= 80) style = styles.high;
+                else if (det.confidence >= 60) style = styles.medium;
+                else style = styles.low;
+                
+                // Dessiner boîte (légère pour mobile)
+                ctx.strokeStyle = style.color;
+                ctx.lineWidth = style.width;
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                
+                // Overlay léger
+                ctx.fillStyle = style.color.replace(')', `, ${style.opacity})`);
+                ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+                
+                // Label minimaliste
+                ctx.fillStyle = style.color;
+                const label = `${det.confidence}%`;
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText(label, x1 + 5, y1 - 8);
+            });
+        }
+        
+        function calculateBoxFromNormalized(normalizedBox) {
+            if (!normalizedBox || normalizedBox.length !== 4) return [0, 0, 0, 0];
+            
+            return [
+                normalizedBox[0] * overlay.width,
+                normalizedBox[1] * overlay.height,
+                normalizedBox[2] * overlay.width,
+                normalizedBox[3] * overlay.height
+            ];
+        }
+        
+        // ============================================
+        // INTERFACE MOBILE
+        // ============================================
+        function updateDetectionsListMobile(detections) {
             detectionsCount.textContent = detections.length;
             
             if (detections.length === 0) {
                 detectionsList.innerHTML = `
-                    <div style="text-align: center; color: #64748b; padding: 20px;">
-                        Aucune détection
+                    <div style="text-align: center; padding: 30px; color: rgba(255,255,255,0.5);">
+                        <div>🔍</div>
+                        <div style="margin-top: 10px;">Aucune détection</div>
                     </div>
                 `;
                 return;
@@ -768,21 +780,13 @@
             
             let html = '';
             
-            // Trier par confiance
-            detections.sort((a, b) => b.confidence - a.confidence);
-            
-            // Limiter à 8 affichages
-            const displayDetections = detections.slice(0, 8);
-            
-            displayDetections.forEach((det, index) => {
-                const confidenceColor = getConfidenceColor(det.confidence);
+            detections.slice(0, 10).forEach(det => {
+                const confidenceColor = getMobileConfidenceColor(det.confidence);
                 
                 html += `
-                    <div class="detection-item">
+                    <div class="detection-card">
                         <div class="detection-header">
-                            <div class="detection-class">
-                                ${det.class_name} #${det.id}
-                            </div>
+                            <div class="detection-name">${det.class_name}</div>
                             <div class="detection-confidence" style="background: ${confidenceColor}">
                                 ${det.confidence}%
                             </div>
@@ -790,7 +794,7 @@
                         <div class="detection-details">
                             <span>📏 ${det.width}x${det.height}</span>
                             <span>📍 ${det.box_pixels[0]},${det.box_pixels[1]}</span>
-                            <span>🎯 ${det.is_note ? 'NOTE' : 'Objet'}</span>
+                            ${det.is_note ? '<span>🎵 Note</span>' : ''}
                         </div>
                     </div>
                 `;
@@ -799,199 +803,157 @@
             detectionsList.innerHTML = html;
         }
         
-        // ================================================================
-        // DESSIN SUR L'OVERLAY
-        // ================================================================
-        function drawDetections(detections) {
-            // Effacer l'overlay
-            ctx.clearRect(0, 0, overlay.width, overlay.height);
-            
-            if (!detections || detections.length === 0) return;
-            
-            // Trier par taille (les plus grandes d'abord)
-            detections.sort((a, b) => b.area - a.area);
-            
-            // Dessiner toutes les détections
-            detections.forEach((det, index) => {
-                const [x1, y1, x2, y2] = det.box;
-                const px1 = x1 * overlay.width;
-                const py1 = y1 * overlay.height;
-                const px2 = x2 * overlay.width;
-                const py2 = y2 * overlay.height;
-                
-                const width = px2 - px1;
-                const height = py2 - py1;
-                
-                // Couleur basée sur la confiance
-                const color = getConfidenceColor(det.confidence);
-                
-                // Épaisseur basée sur la confiance
-                const lineWidth = det.confidence > 80 ? 4 : 
-                                 det.confidence > 50 ? 3 : 2;
-                
-                // Dessiner le rectangle
-                ctx.strokeStyle = color;
-                ctx.lineWidth = lineWidth;
-                ctx.strokeRect(px1, py1, width, height);
-                
-                // Ajouter un fond semi-transparent
-                ctx.fillStyle = color.replace(')', ', 0.1)').replace('rgb', 'rgba');
-                ctx.fillRect(px1, py1, width, height);
-                
-                // Préparer le texte
-                const label = `${det.class_name} ${det.confidence}%`;
-                const fontSize = Math.max(14, Math.min(24, width / 15));
-                
-                // Dessiner le fond du label
-                ctx.fillStyle = color;
-                const textWidth = ctx.measureText(label).width;
-                ctx.fillRect(px1, py1 - fontSize - 8, textWidth + 20, fontSize + 8);
-                
-                // Dessiner le texte
-                ctx.fillStyle = '#000';
-                ctx.font = `bold ${fontSize}px Arial`;
-                ctx.fillText(label, px1 + 10, py1 - 5);
-                
-                // Dessiner l'ID
-                ctx.fillStyle = color;
-                ctx.font = `bold ${fontSize - 4}px Arial`;
-                ctx.fillText(`#${det.id}`, px2 - 30, py1 + 20);
-            });
-        }
-        
-        function getConfidenceColor(confidence) {
-            if (confidence >= 90) return '#00ff00';
+        function getMobileConfidenceColor(confidence) {
+            if (confidence >= 90) return '#00ff88';
             if (confidence >= 70) return '#22c55e';
             if (confidence >= 50) return '#f59e0b';
-            if (confidence >= 30) return '#ef4444';
-            return '#6b7280';
+            return '#ef4444';
         }
         
-        // ================================================================
-        // CONTRÔLES DE DÉTECTION
-        // ================================================================
+        function updateInfoBubble(message) {
+            infoBubble.textContent = message;
+            infoBubble.style.display = 'block';
+            
+            // Cacher après 3 secondes si pas d'erreur
+            if (!message.includes('❌')) {
+                setTimeout(() => {
+                    infoBubble.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        function showToast(message, isError = false) {
+            const now = Date.now();
+            if (now - lastToastTime < 2000) return;
+            
+            lastToastTime = now;
+            toast.textContent = message;
+            toast.style.background = isError 
+                ? 'rgba(239, 68, 68, 0.9)' 
+                : 'rgba(0, 0, 0, 0.9)';
+            
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // ============================================
+        // CONTRÔLES MOBILE
+        // ============================================
         function startDetection() {
             if (!isStreaming) {
-                alert("Veuillez d'abord initialiser la caméra");
+                showToast("📷 Activez d'abord la caméra", true);
                 return;
             }
             
             detectionActive = true;
             
-            // Démarrer l'intervalle
-            const frequency = parseInt(frequencySelect.value);
             if (detectionInterval) clearInterval(detectionInterval);
-            detectionInterval = setInterval(detectFrame, frequency);
+            detectionInterval = setInterval(
+                detectFrameMobile, 
+                MOBILE_CONFIG.detectionInterval
+            );
             
-            // Mettre à jour les boutons
+            // UI
             btnStart.disabled = true;
-            btnStart.classList.remove('active');
             btnStop.disabled = false;
-            btnSingle.disabled = true;
+            btnStart.classList.remove('active');
             
-            // Mettre à jour l'interface
-            updateInfoBubble("🔄 Détection en cours...");
-            addLog(`Détection démarrée (${frequency}ms)`);
+            showToast("▶️ Détection démarrée");
         }
         
         function stopDetection() {
             detectionActive = false;
             
-            // Arrêter l'intervalle
             if (detectionInterval) {
                 clearInterval(detectionInterval);
                 detectionInterval = null;
             }
             
-            // Mettre à jour les boutons
+            // UI
             btnStart.disabled = false;
             btnStop.disabled = true;
-            btnSingle.disabled = false;
             
-            // Mettre à jour l'interface
-            updateInfoBubble("⏹️ Détection arrêtée");
-            addLog("Détection arrêtée");
+            showToast("⏹️ Détection arrêtée");
         }
         
-        function singleDetection() {
-            if (!isStreaming) {
-                alert("Veuillez d'abord initialiser la caméra");
-                return;
-            }
-            
-            if (detectionActive) {
-                alert("Arrêtez d'abord la détection automatique");
-                return;
-            }
-            
-            detectFrame();
+        function toggleDrawer() {
+            detectionsDrawer.classList.toggle('open');
         }
         
-        function clearOverlay() {
+        function setupDemoMode() {
+            isStreaming = true;
+            overlay.width = 720;
+            overlay.height = 1280;
+            
+            // Détection de démo
+            drawDemoDetections();
+            
+            showToast("📱 Mode démo activé");
+        }
+        
+        function drawDemoDetections() {
             ctx.clearRect(0, 0, overlay.width, overlay.height);
-            currentDetections = [];
-            updateDetectionsList([]);
-            updateInfoBubble("🧹 Affichage effacé");
-            addLog("Affichage effacé");
-        }
-        
-        // ================================================================
-        // UTILITAIRES
-        // ================================================================
-        function updateInfoBubble(message) {
-            infoBubble.textContent = message;
-        }
-        
-        function addLog(message) {
-            const timestamp = new Date().toLocaleTimeString();
-            const logEntry = document.createElement('div');
-            logEntry.style.padding = '3px 0';
-            logEntry.style.borderBottom = '1px solid #334155';
-            logEntry.textContent = `[${timestamp}] ${message}`;
             
-            logsContainer.insertBefore(logEntry, logsContainer.firstChild);
+            // Exemple de boîte
+            const x = overlay.width * 0.3;
+            const y = overlay.height * 0.4;
+            const width = overlay.width * 0.4;
+            const height = overlay.height * 0.2;
             
-            // Limiter à 15 lignes
-            while (logsContainer.children.length > 15) {
-                logsContainer.removeChild(logsContainer.lastChild);
-            }
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, width, height);
+            
+            ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';
+            ctx.fillRect(x, y, width, height);
+            
+            ctx.fillStyle = '#00ff88';
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText('📝 Note 95%', x + 10, y - 10);
         }
         
-        // ================================================================
-        // GESTION DES ÉVÉNEMENTS
-        // ================================================================
-        confidenceSlider.addEventListener('input', function() {
-            const value = this.value;
-            confidenceValue.textContent = `${value}%`;
-            addLog(`Seuil confiance ajusté à ${value}%`);
-        });
+        // ============================================
+        // GESTION TOUCH
+        // ============================================
+        let touchStartY = 0;
         
-        frequencySelect.addEventListener('change', function() {
-            if (detectionActive) {
-                // Redémarrer avec la nouvelle fréquence
-                const oldActive = detectionActive;
-                stopDetection();
-                
-                setTimeout(() => {
-                    if (oldActive) {
-                        startDetection();
-                    }
-                }, 100);
+        detectionsDrawer.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        
+        detectionsDrawer.addEventListener('touchmove', (e) => {
+            if (!detectionsDrawer.classList.contains('open')) return;
+            
+            const touchY = e.touches[0].clientY;
+            const diff = touchStartY - touchY;
+            
+            if (diff < -50) { // Swipe down
+                detectionsDrawer.classList.remove('open');
             }
-            addLog(`Fréquence ajustée à ${this.value}ms`);
-        });
+        }, { passive: true });
         
-        // ================================================================
+        // ============================================
         // DÉMARRAGE
-        // ================================================================
-        window.addEventListener('DOMContentLoaded', initialize);
+        // ============================================
+        window.addEventListener('DOMContentLoaded', initializeMobile);
         
-        // Détection automatique après 2 secondes
-        setTimeout(() => {
-            if (isStreaming) {
-                startDetection();
+        // Gestion orientation
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                location.reload();
+            }, 100);
+        });
+        
+        // Prévenir la fermeture
+        window.addEventListener('beforeunload', (e) => {
+            if (detectionActive) {
+                e.preventDefault();
+                e.returnValue = 'La détection est en cours. Voulez-vous vraiment quitter?';
             }
-        }, 2000);
+        });
     </script>
 </body>
 </html>
