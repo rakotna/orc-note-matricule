@@ -13,14 +13,23 @@ let detectionCount = 0;
 
 // Démarrage caméra
 navigator.mediaDevices.getUserMedia({ 
-    video: { facingMode: "environment", width: 1280, height: 720 } 
+    video: { 
+        facingMode: "environment", 
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+    } 
 })
 .then(stream => {
     video.srcObject = stream;
-    video.onloadedmetadata = () => {
-        overlay.width = video.videoWidth;
-        overlay.height = video.videoHeight;
-    };
+    video.play().then(() => {
+        // Attendre que la vidéo soit prête
+        video.onloadeddata = () => {
+            overlay.width = video.videoWidth;
+            overlay.height = video.videoHeight;
+            console.log(`Caméra: ${video.videoWidth}x${video.videoHeight}`);
+            aiStatus.textContent = "✅ Caméra prête - Recherche de notes...";
+        };
+    });
 })
 .catch(err => {
     console.error("Erreur caméra:", err);
@@ -29,13 +38,17 @@ navigator.mediaDevices.getUserMedia({
 
 // Fonction pour dessiner les détections
 function drawDetections(detections) {
-    const scaleX = overlay.width / video.videoWidth;
-    const scaleY = overlay.height / video.videoHeight;
+    if (!detections || detections.length === 0) {
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        return;
+    }
+    
+    console.log("Détections reçues:", detections);
     
     ctx.clearRect(0, 0, overlay.width, overlay.height);
     
     detections.forEach(d => {
-        // Conversion des coordonnées normalisées
+        // Les coordonnées sont déjà normalisées entre 0 et 1
         const x1 = d.box[0] * overlay.width;
         const y1 = d.box[1] * overlay.height;
         const x2 = d.box[2] * overlay.width;
@@ -44,64 +57,60 @@ function drawDetections(detections) {
         const width = x2 - x1;
         const height = y2 - y1;
         
-        // ✅ CADRE VERT ÉPAIS
-        ctx.strokeStyle = "#00FF00";
-        ctx.lineWidth = 4;
-        ctx.shadowColor = "#00FF00";
-        ctx.shadowBlur = 10;
-        ctx.strokeRect(x1, y1, width, height);
-        ctx.shadowBlur = 0;
+        console.log(`Box: ${x1}, ${y1}, ${width}, ${height}`);
         
-        // ✅ ÉTIQUETTE EN HAUT : "Note" (zone YOLO)
+        // CADRE VERT
+        ctx.strokeStyle = "#00FF00";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x1, y1, width, height);
+        
+        // Fond pour le texte
         ctx.fillStyle = "#00FF00";
-        ctx.font = "bold 18px Arial";
+        ctx.font = "bold 16px Arial";
+        
+        // Texte "Note" en haut
         const labelTop = "Note";
         const labelTopWidth = ctx.measureText(labelTop).width;
+        ctx.fillRect(x1, y1 - 25, labelTopWidth + 10, 25);
         
-        ctx.fillRect(x1, y1 - 30, labelTopWidth + 20, 30);
-        ctx.fillStyle = "black";
-        ctx.fillText(labelTop, x1 + 10, y1 - 8);
-        
-        // ✅ VALEUR DÉTECTÉE EN BAS (OCR)
+        // Texte de la note en bas
         if (d.text && d.text !== "---") {
-            ctx.fillStyle = "#00FF00";
-            ctx.font = "bold 20px Arial";
             const valueText = `${d.text} (${d.conf}%)`;
             const valueWidth = ctx.measureText(valueText).width;
+            ctx.fillRect(x1, y2, valueWidth + 10, 25);
             
-            ctx.fillRect(x1, y2 + 5, valueWidth + 20, 35);
+            // Texte noir
             ctx.fillStyle = "black";
-            ctx.fillText(valueText, x1 + 10, y2 + 28);
+            ctx.fillText(labelTop, x1 + 5, y1 - 8);
+            ctx.fillText(valueText, x1 + 5, y2 + 18);
+        } else {
+            // Texte noir juste pour "Note"
+            ctx.fillStyle = "black";
+            ctx.fillText(labelTop, x1 + 5, y1 - 8);
         }
     });
 }
 
 // Fonction de capture et détection
 async function capture() {
-    if (video.videoWidth === 0 || video.readyState !== 4) return;
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = 640;
-    canvas.height = 640;
-    const tempCtx = canvas.getContext('2d');
-    
-    // Capture centrée
-    const aspect = video.videoWidth / video.videoHeight;
-    let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
-    
-    if (aspect > 1) {
-        sw = video.videoHeight;
-        sx = (video.videoWidth - sw) / 2;
-    } else {
-        sh = video.videoWidth;
-        sy = (video.videoHeight - sh) / 2;
+    if (!video.videoWidth || video.readyState !== 4) {
+        console.log("Vidéo non prête");
+        return;
     }
     
-    tempCtx.drawImage(video, sx, sy, sw, sh, 0, 0, 640, 640);
+    // Créer un canvas temporaire avec la même taille que la vidéo
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const tempCtx = canvas.getContext('2d');
     
+    // Dessiner la vidéo complète (sans crop)
+    tempCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convertir en blob
     canvas.toBlob(async (blob) => {
         const fd = new FormData();
-        fd.append('frame', blob);
+        fd.append('frame', blob, 'frame.jpg');
         
         try {
             aiStatus.textContent = "🔍 Analyse en cours...";
@@ -115,8 +124,9 @@ async function capture() {
             });
             
             const data = await res.json();
+            console.log("Réponse backend:", data);
             
-            if (data.note !== "---") {
+            if (data.note && data.note !== "---") {
                 noteDisplay.innerText = data.note;
                 noteDisplay.classList.add('detected-pulse');
                 setTimeout(() => noteDisplay.classList.remove('detected-pulse'), 500);
@@ -126,19 +136,22 @@ async function capture() {
                 aiStatus.textContent = "🔍 Recherche de note...";
             }
             
-            drawDetections(data.detections || []);
+            // Dessiner les détections reçues
+            drawDetections(data.detections);
             
         } catch (e) {
             console.error("Erreur API:", e);
             aiStatus.textContent = "❌ Erreur connexion backend";
             ctx.clearRect(0, 0, overlay.width, overlay.height);
         }
-    }, 'image/jpeg', 0.85);
+    }, 'image/jpeg', 0.9); // Qualité à 90%
 }
 
 // Sauvegarde dans l'historique
 btnSave.onclick = () => {
     const note = noteDisplay.innerText;
+    if (note === "---") return;
+    
     const li = document.createElement('li');
     li.innerHTML = `<b>${note}</b> - ${new Date().toLocaleTimeString()}`;
     historyList.insertBefore(li, historyList.firstChild);
@@ -151,5 +164,12 @@ btnSave.onclick = () => {
     setTimeout(() => aiStatus.textContent = "Prêt pour scan", 2000);
 };
 
-// Boucle de détection toutes les 1.2 secondes
-setInterval(capture, 1200);
+// Boucle de détection toutes les 800ms
+setInterval(capture, 800);
+
+// Optionnel: ajouter un bouton pour tester manuellement
+const testBtn = document.createElement('button');
+testBtn.textContent = "TEST DÉTECTION";
+testBtn.style.cssText = "position: fixed; bottom: 20px; right: 20px; z-index: 1000; padding: 10px;";
+testBtn.onclick = capture;
+document.body.appendChild(testBtn);
