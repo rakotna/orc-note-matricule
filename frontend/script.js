@@ -1,31 +1,115 @@
-// --- CONFIGURATION ---
-const API_URL = "https://thi-creasy-lightsomely.ngrok-free.dev";
+// ============================================================================
+// CONFIGURATION - IMPORTANT : MODIFIEZ CETTE URL !
+// ============================================================================
+// ⚠️ REMPLACEZ PAR L'URL NGROK OBTENUE DANS COLAB ⚠️
+const API_URL = "https://thi-creasy-lightsomely.ngrok-free.dev/";  // ← À MODIFIER
+
+// Éléments DOM
 const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
 const noteDisplay = document.getElementById('note-display');
 const btnSave = document.getElementById('btn-save');
+const btnTest = document.getElementById('btn-test');
+const btnManual = document.getElementById('btn-manual');
 const historyList = document.getElementById('history-list');
 const sessionCount = document.getElementById('session-count');
-const aiStatus = document.getElementById('ai-status');
-const debugStatus = document.getElementById('debug-status');
-const fpsCounter = document.getElementById('fps-counter');
+const connectionStatus = document.getElementById('connection-status');
+const connectionText = document.getElementById('connection-text');
+const statusIndicator = document.getElementById('status-indicator');
+const debugInfo = document.getElementById('debug-info');
+const apiUrlDisplay = document.getElementById('current-api-url');
 const confidenceBadge = document.getElementById('confidence-badge');
 
+// Variables globales
 let detectionCount = 0;
 let isStreaming = false;
-let frameCount = 0;
-let lastFrameTime = performance.now();
-let fps = 0;
+let isProcessing = false;
+let apiConnected = false;
+let detectionInterval = null;
+let currentAPIUrl = API_URL;
 
-// Initialisation de la caméra
-async function initCamera() {
+// ============================================================================
+// INITIALISATION
+// ============================================================================
+async function initializeApp() {
+    console.log("🚀 Initialisation de NoteScanner...");
+    
+    // Afficher l'URL API utilisée
+    apiUrlDisplay.textContent = currentAPIUrl;
+    console.log(`🌐 URL API configurée: ${currentAPIUrl}`);
+    
+    // 1. Vérifier la connexion API
+    await checkAPIHealth();
+    
+    // 2. Initialiser la caméra
+    await initializeCamera();
+    
+    // 3. Démarrer la détection automatique
+    if (apiConnected && isStreaming) {
+        startDetectionLoop();
+    }
+}
+
+// ============================================================================
+// GESTION API
+// ============================================================================
+async function checkAPIHealth() {
+    updateStatus("Connexion au serveur...", "connecting");
+    
     try {
-        aiStatus.textContent = "📷 Initialisation caméra...";
+        const response = await fetch(`${currentAPIUrl}/health`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            },
+            mode: 'cors',
+            cache: 'no-store'
+        });
         
+        if (response.ok) {
+            const data = await response.json();
+            
+            apiConnected = true;
+            updateStatus(`✅ Connecté au serveur (${data.gpu ? 'GPU' : 'CPU'})`, "connected");
+            
+            debugInfo.textContent = `Serveur: ${data.status} | OCR: ${data.ocr || 'ready'}`;
+            
+            return true;
+        } else {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+    } catch (error) {
+        console.error("❌ Erreur connexion API:", error);
+        
+        apiConnected = false;
+        updateStatus(`❌ Serveur hors ligne: ${error.message}`, "error");
+        
+        debugInfo.textContent = `Erreur: ${error.message}. Vérifiez que le backend Colab est actif.`;
+        
+        return false;
+    }
+}
+
+function updateStatus(message, type) {
+    connectionText.textContent = message;
+    connectionStatus.className = `connection-status ${type}`;
+    statusIndicator.className = `status-indicator ${type}`;
+}
+
+// ============================================================================
+// GESTION CAMÉRA
+// ============================================================================
+async function initializeCamera() {
+    try {
+        updateStatus("Initialisation caméra...", "connecting");
+        
+        // Demander l'accès à la caméra
         const constraints = {
             video: {
-                facingMode: "environment",
+                facingMode: "environment",  // Caméra arrière
                 width: { ideal: 1280 },
                 height: { ideal: 720 },
                 frameRate: { ideal: 30 }
@@ -35,319 +119,328 @@ async function initCamera() {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
         
-        return new Promise(resolve => {
+        // Attendre que la vidéo soit prête
+        await new Promise((resolve) => {
             video.onloadedmetadata = () => {
-                // Ajuster la taille de l'overlay à la vidéo
+                // Ajuster l'overlay à la taille de la vidéo
                 overlay.width = video.videoWidth;
                 overlay.height = video.videoHeight;
-                console.log(`Caméra: ${video.videoWidth}x${video.videoHeight}`);
+                
+                console.log(`📷 Caméra initialisée: ${video.videoWidth}x${video.videoHeight}`);
                 isStreaming = true;
-                aiStatus.textContent = "✅ Caméra prête";
                 resolve();
             };
         });
+        
+        return true;
+        
     } catch (error) {
-        console.error("Erreur caméra:", error);
-        aiStatus.textContent = "❌ Erreur caméra";
-        throw error;
+        console.error("❌ Erreur caméra:", error);
+        
+        updateStatus("❌ Erreur d'accès à la caméra", "error");
+        debugInfo.textContent = `Erreur caméra: ${error.message}`;
+        
+        // Mode démo sans caméra
+        showDemoMode();
+        return false;
     }
 }
 
-// Dessiner les détections
-function drawDetections(detections) {
-    if (!detections || detections.length === 0) {
-        // Effacer l'overlay s'il n'y a pas de détections
-        ctx.clearRect(0, 0, overlay.width, overlay.height);
-        return;
-    }
+function showDemoMode() {
+    debugInfo.textContent += " | Mode démo activé";
+    noteDisplay.textContent = "14.5/20";
+    btnSave.disabled = false;
     
-    // Effacer le canvas
-    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    // Simuler une détection
+    setTimeout(() => {
+        drawDemoDetection();
+    }, 1000);
+}
+
+function drawDemoDetection() {
+    // Dessiner une détection de démo
+    const x1 = overlay.width * 0.3;
+    const y1 = overlay.height * 0.3;
+    const width = overlay.width * 0.4;
+    const height = overlay.height * 0.4;
     
-    detections.forEach(detection => {
-        // Convertir les coordonnées normalisées en pixels
-        const x1 = detection.box[0] * overlay.width;
-        const y1 = detection.box[1] * overlay.height;
-        const x2 = detection.box[2] * overlay.width;
-        const y2 = detection.box[3] * overlay.height;
+    ctx.strokeStyle = "#00ff00";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x1, y1, width, height);
+    
+    ctx.fillStyle = "#00ff00";
+    ctx.font = "bold 16px Arial";
+    ctx.fillText("NOTE (DÉMO)", x1 + 10, y1 - 10);
+}
+
+// ============================================================================
+// DÉTECTION ET OCR
+// ============================================================================
+async function captureAndDetect() {
+    if (!isStreaming || !apiConnected || isProcessing) return;
+    
+    isProcessing = true;
+    
+    try {
+        debugInfo.textContent = "Capture en cours...";
         
-        const width = x2 - x1;
-        const height = y2 - y1;
+        // Capturer une frame
+        const imageBlob = await captureFrame();
+        if (!imageBlob) return;
         
-        // Dessiner un rectangle vert épais avec glow
-        ctx.strokeStyle = "#00FF00";
-        ctx.lineWidth = 4;
-        ctx.shadowColor = "#00FF00";
-        ctx.shadowBlur = 15;
-        ctx.strokeRect(x1, y1, width, height);
-        ctx.shadowBlur = 0;
+        // Envoyer au serveur
+        const result = await sendToBackend(imageBlob);
         
-        // Ajouter un fond semi-transparent
-        ctx.fillStyle = "rgba(0, 255, 0, 0.1)";
-        ctx.fillRect(x1, y1, width, height);
-        
-        // Dessiner le label "NOTE"
-        ctx.fillStyle = "#00FF00";
-        ctx.font = "bold 18px Arial";
-        const label = "NOTE";
-        const labelWidth = ctx.measureText(label).width;
-        
-        // Rectangle de fond pour le label
-        ctx.fillRect(x1, y1 - 30, labelWidth + 20, 30);
-        
-        // Texte du label
-        ctx.fillStyle = "#000";
-        ctx.fillText(label, x1 + 10, y1 - 8);
-        
-        // Si une note est détectée, afficher la valeur
-        if (detection.text && detection.text !== "---") {
-            const noteText = `${detection.text}`;
-            const confText = `${detection.conf}%`;
-            
-            ctx.fillStyle = "#00FF00";
-            ctx.font = "bold 22px Arial";
-            const noteWidth = ctx.measureText(noteText).width;
-            
-            // Rectangle de fond pour la note
-            ctx.fillRect(x1, y2, noteWidth + 20, 35);
-            
-            // Texte de la note
-            ctx.fillStyle = "#000";
-            ctx.fillText(noteText, x1 + 10, y2 + 25);
-            
-            // Badge de confiance
-            ctx.fillStyle = detection.conf > 80 ? "#00FF00" : "#FF9900";
-            ctx.font = "bold 14px Arial";
-            const confWidth = ctx.measureText(confText).width;
-            ctx.fillRect(x2 - confWidth - 15, y1, confWidth + 10, 25);
-            ctx.fillStyle = "#000";
-            ctx.fillText(confText, x2 - confWidth - 10, y1 + 18);
-            
-            // Mettre à jour le badge de confiance dans l'UI
-            confidenceBadge.textContent = `${detection.conf}%`;
-            confidenceBadge.style.background = detection.conf > 80 ? "#00FF00" : "#FF9900";
+        if (result) {
+            processDetectionResult(result);
         }
+        
+    } catch (error) {
+        console.error("Erreur détection:", error);
+        debugInfo.textContent = `Erreur: ${error.message}`;
+    } finally {
+        isProcessing = false;
+    }
+}
+
+async function captureFrame() {
+    if (!isStreaming || video.readyState !== 4) return null;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const tempCtx = canvas.getContext('2d');
+    
+    // Miroir horizontal pour correspondre à l'affichage
+    tempCtx.translate(canvas.width, 0);
+    tempCtx.scale(-1, 1);
+    tempCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    return new Promise((resolve) => {
+        canvas.toBlob(resolve, 'image/jpeg', 0.85);
     });
 }
 
-// Capturer et envoyer au backend
-async function captureAndDetect() {
-    if (!isStreaming || video.readyState !== 4) {
-        return;
-    }
-    
-    // Mettre à jour les FPS
-    frameCount++;
-    const now = performance.now();
-    if (now - lastFrameTime >= 1000) {
-        fps = Math.round((frameCount * 1000) / (now - lastFrameTime));
-        fpsCounter.textContent = `FPS: ${fps}`;
-        frameCount = 0;
-        lastFrameTime = now;
-    }
+async function sendToBackend(imageBlob) {
+    const formData = new FormData();
+    formData.append('frame', imageBlob, 'capture.jpg');
     
     try {
-        // Créer un canvas temporaire
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const tempCtx = canvas.getContext('2d');
-        
-        // Dessiner la vidéo (miroir pour correspondre à l'affichage)
-        tempCtx.save();
-        tempCtx.scale(-1, 1);
-        tempCtx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-        tempCtx.restore();
-        
-        // Convertir en blob
-        const blob = await new Promise(resolve => {
-            canvas.toBlob(resolve, 'image/jpeg', 0.9);
-        });
-        
-        if (!blob) {
-            debugStatus.textContent = "Erreur: impossible de créer l'image";
-            return;
-        }
-        
-        // Préparer la requête
-        const formData = new FormData();
-        formData.append('frame', blob, 'capture.jpg');
-        
-        aiStatus.textContent = "🔍 Analyse en cours...";
-        
-        // Envoyer au backend
-        const response = await fetch(`${API_URL}/detect`, {
+        const response = await fetch(`${currentAPIUrl}/detect`, {
             method: 'POST',
             body: formData,
             headers: {
-                'ngrok-skip-browser-warning': 'true'
+                'ngrok-skip-browser-warning': 'true',
+                'Accept': 'application/json'
             },
-            signal: AbortSignal.timeout(5000) // Timeout de 5 secondes
+            mode: 'cors'
         });
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
         
-        const data = await response.json();
-        debugStatus.textContent = `Détection: ${data.processing_time || 0}ms`;
-        
-        // Traiter la réponse
-        if (data.note && data.note !== "---") {
-            // Note détectée avec succès
-            noteDisplay.textContent = data.note;
-            noteDisplay.classList.add('detected-pulse');
-            
-            setTimeout(() => {
-                noteDisplay.classList.remove('detected-pulse');
-            }, 500);
-            
-            btnSave.disabled = false;
-            aiStatus.textContent = `✅ ${data.note} détectée`;
-            
-            // Jouer un son court
-            playDetectionSound();
-            
-        } else {
-            // Aucune note détectée
-            aiStatus.textContent = "🔍 Recherche de note...";
-            noteDisplay.textContent = "---";
-            confidenceBadge.textContent = "0%";
-            confidenceBadge.style.background = "#666";
-            btnSave.disabled = true;
-        }
-        
-        // Dessiner les détections sur l'overlay
-        drawDetections(data.detections || []);
+        return await response.json();
         
     } catch (error) {
-        console.error("Erreur détection:", error);
+        console.error("Erreur backend:", error);
         
-        if (error.name === 'AbortError') {
-            aiStatus.textContent = "⏱️ Timeout de connexion";
-        } else {
-            aiStatus.textContent = "❌ Erreur serveur";
+        // Si erreur de connexion, vérifier l'état de l'API
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            apiConnected = false;
+            updateStatus("❌ Connexion perdue", "error");
         }
         
-        // Effacer l'overlay en cas d'erreur
-        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        return null;
+    }
+}
+
+function processDetectionResult(result) {
+    debugInfo.textContent = `Traitement: ${result.processing_time_ms || 0}ms`;
+    
+    // Effacer l'overlay précédent
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    
+    // Traiter la note
+    if (result.note && result.note !== "---") {
+        // Mettre à jour l'affichage
+        noteDisplay.textContent = result.note;
+        noteDisplay.classList.add('detected-pulse');
+        
+        setTimeout(() => {
+            noteDisplay.classList.remove('detected-pulse');
+        }, 500);
+        
+        // Activer le bouton sauvegarde
+        btnSave.disabled = false;
+        
+        // Mettre à jour le badge de confiance
+        if (result.detections && result.detections.length > 0) {
+            const confidence = result.detections[0].conf;
+            confidenceBadge.textContent = `${confidence}%`;
+            confidenceBadge.style.background = confidence > 80 ? "#00ff00" : "#ff9900";
+            
+            // Dessiner la détection
+            drawDetection(result.detections[0]);
+        }
+        
+        updateStatus(`✅ ${result.note} détectée`, "connected");
+        
+    } else {
         noteDisplay.textContent = "---";
         btnSave.disabled = true;
+        confidenceBadge.textContent = "0%";
+        confidenceBadge.style.background = "#666";
         
-        // Réessayer après 2 secondes
-        setTimeout(() => {
-            aiStatus.textContent = "Réessai...";
-        }, 2000);
+        updateStatus("🔍 Recherche de note...", "connected");
     }
 }
 
-// Son de détection
-function playDetectionSound() {
-    try {
-        // Créer un contexte audio simple
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
+function drawDetection(detection) {
+    const [x1, y1, x2, y2] = detection.box;
+    const conf = detection.conf;
+    const text = detection.text;
+    
+    const px1 = x1 * overlay.width;
+    const py1 = y1 * overlay.height;
+    const px2 = x2 * overlay.width;
+    const py2 = y2 * overlay.height;
+    
+    const width = px2 - px1;
+    const height = py2 - py1;
+    
+    // Rectangle de détection
+    ctx.strokeStyle = conf > 80 ? "#00ff00" : "#ff9900";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(px1, py1, width, height);
+    
+    // Label en haut
+    ctx.fillStyle = conf > 80 ? "#00ff00" : "#ff9900";
+    ctx.font = "bold 16px Arial";
+    ctx.fillRect(px1, py1 - 25, 70, 25);
+    
+    ctx.fillStyle = "#000";
+    ctx.fillText("NOTE", px1 + 5, py1 - 8);
+    
+    // Note en bas
+    if (text && text !== "---") {
+        ctx.fillStyle = conf > 80 ? "#00ff00" : "#ff9900";
+        ctx.font = "bold 18px Arial";
+        ctx.fillRect(px1, py2, 100, 30);
         
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(1200, audioContext.currentTime + 0.05);
-        
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.1);
-    } catch (e) {
-        // Silencieux si l'audio n'est pas supporté
+        ctx.fillStyle = "#000";
+        ctx.fillText(text, px1 + 5, py2 + 20);
     }
 }
 
-// Sauvegarder la note
-function saveNoteToHistory() {
+// ============================================================================
+# BOUCLE DE DÉTECTION
+# ============================================================================
+function startDetectionLoop() {
+    // Arrêter l'intervalle existant
+    if (detectionInterval) {
+        clearInterval(detectionInterval);
+    }
+    
+    // Démarrer toutes les 1.5 secondes
+    detectionInterval = setInterval(() => {
+        if (apiConnected && isStreaming && !isProcessing) {
+            captureAndDetect();
+        }
+    }, 1500);
+    
+    updateStatus("✅ Système prêt - Détection active", "connected");
+}
+
+// ============================================================================
+# GESTION HISTORIQUE
+# ============================================================================
+function saveToHistory() {
     const note = noteDisplay.textContent;
     if (note === "---") return;
     
     const now = new Date();
-    const listItem = document.createElement('li');
+    const timeString = now.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
     
-    listItem.innerHTML = `
+    const historyItem = document.createElement('li');
+    historyItem.className = 'history-item';
+    historyItem.innerHTML = `
         <span class="history-note">${note}</span>
-        <span class="history-time">${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+        <span class="history-time">${timeString}</span>
     `;
     
-    historyList.insertBefore(listItem, historyList.firstChild);
+    // Ajouter au début
+    historyList.insertBefore(historyItem, historyList.firstChild);
     
     // Limiter à 10 éléments
-    if (historyList.children.length > 10) {
+    while (historyList.children.length > 10) {
         historyList.removeChild(historyList.lastChild);
     }
     
+    // Mettre à jour le compteur
     detectionCount++;
     sessionCount.textContent = `${detectionCount} note${detectionCount !== 1 ? 's' : ''}`;
     
+    // Désactiver le bouton
     btnSave.disabled = true;
-    aiStatus.textContent = "💾 Note sauvegardée";
     
-    // Animation de confirmation
-    noteDisplay.style.color = "#4ade80";
+    // Feedback
+    updateStatus("💾 Note sauvegardée", "connected");
     setTimeout(() => {
-        noteDisplay.style.color = "#00FF00";
-    }, 1000);
-    
-    setTimeout(() => {
-        aiStatus.textContent = "Prêt pour scan";
-    }, 1500);
-}
-
-// Initialisation
-async function initApp() {
-    try {
-        await initCamera();
-        
-        // Vérifier la connexion API
-        try {
-            const healthResponse = await fetch(`${API_URL}/health`, {
-                headers: { 'ngrok-skip-browser-warning': 'true' }
-            });
-            if (healthResponse.ok) {
-                aiStatus.textContent = "✅ Système prêt";
-            }
-        } catch (apiError) {
-            console.warn("API health check échoué:", apiError);
-            aiStatus.textContent = "⚠️ API non disponible";
+        if (apiConnected) {
+            updateStatus("✅ Prêt pour scan", "connected");
         }
-        
-        // Démarrer la boucle de détection (toutes les 800ms)
-        setInterval(captureAndDetect, 800);
-        
-        // Première détection après 1 seconde
-        setTimeout(captureAndDetect, 1000);
-        
-    } catch (error) {
-        console.error("Erreur initialisation:", error);
-        aiStatus.textContent = "❌ Erreur initialisation";
-    }
+    }, 2000);
 }
 
-// Événements
-btnSave.addEventListener('click', saveNoteToHistory);
+# ============================================================================
+# ÉVÉNEMENTS
+# ============================================================================
+btnSave.addEventListener('click', saveToHistory);
+
+btnTest.addEventListener('click', async () => {
+    updateStatus("Test de connexion...", "connecting");
+    const connected = await checkAPIHealth();
+    
+    if (connected) {
+        alert("✅ Connexion API réussie !");
+    } else {
+        alert("❌ Échec de connexion. Vérifiez le backend Colab.");
+    }
+});
+
+btnManual.addEventListener('click', () => {
+    if (apiConnected && isStreaming) {
+        updateStatus("Détection manuelle...", "connecting");
+        captureAndDetect();
+    } else {
+        alert("Veuillez d'abord initialiser la caméra et vérifier la connexion API.");
+    }
+});
 
 // Touche Espace pour sauvegarder
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && !btnSave.disabled) {
         e.preventDefault();
-        saveNoteToHistory();
+        saveToHistory();
     }
     
-    // Touche 'D' pour forcer une détection (debug)
+    // Touche D pour détection manuelle
     if (e.code === 'KeyD') {
         e.preventDefault();
-        captureAndDetect();
+        if (apiConnected && isStreaming) {
+            captureAndDetect();
+        }
     }
 });
 
-// Démarrer l'application
-window.addEventListener('DOMContentLoaded', initApp);
+// ============================================================================
+# DÉMARRAGE
+# ============================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("📄 Page chargée, démarrage de l'application...");
+    initializeApp();
+});
