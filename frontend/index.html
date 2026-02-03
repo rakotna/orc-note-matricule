@@ -3,48 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎯 YOLO Mobile - Notes</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>🎯 YOLO Notes - Détection Mobile</title>
     <style>
-        /* RESET MOBILE */
+        /* RESET COMPLET */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
             -webkit-text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
         }
         
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a;
-            color: white;
-            overscroll-behavior: none;
-            touch-action: pan-x pan-y;
-            height: 100vh;
+        html, body {
+            height: 100%;
             overflow: hidden;
+            background: #000;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            touch-action: manipulation;
         }
         
-        /* CONTAINER PRINCIPAL */
-        .app-container {
+        /* APP CONTAINER */
+        .app {
             height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            background: #0a0a0a;
         }
         
-        /* HEADER MOBILE */
-        .mobile-header {
+        /* HEADER */
+        .header {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            padding: 12px 16px;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
             z-index: 100;
         }
         
-        .header-content {
+        .header-left {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 10px;
         }
         
         .app-title {
@@ -56,28 +61,52 @@
             color: transparent;
         }
         
-        /* CAMÉRA MOBILE */
-        .camera-section {
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            padding: 4px 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+        
+        .status-dot.active {
+            background: #00ff88;
+            animation: pulse 2s infinite;
+        }
+        
+        /* MAIN CONTENT */
+        .main-content {
             flex: 1;
             position: relative;
-            background: #000;
             overflow: hidden;
         }
         
-        .camera-container {
+        /* CAMERA AREA */
+        .camera-area {
             width: 100%;
             height: 100%;
             position: relative;
+            background: #000;
         }
         
-        #video {
+        #videoElement {
             width: 100%;
             height: 100%;
             object-fit: cover;
             transform: scaleX(-1);
         }
         
-        #overlay {
+        #overlayCanvas {
             position: absolute;
             top: 0;
             left: 0;
@@ -86,95 +115,111 @@
             pointer-events: none;
         }
         
-        /* HUD MOBILE */
-        .hud {
+        /* WELCOME SCREEN */
+        .welcome-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            text-align: center;
+            z-index: 200;
+            transition: opacity 0.3s;
+        }
+        
+        .welcome-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .welcome-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .welcome-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00ff88, #00ccff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .welcome-text {
+            color: #aaa;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        
+        /* STATS OVERLAY */
+        .stats-overlay {
             position: absolute;
             top: 15px;
             left: 15px;
             right: 15px;
             display: flex;
             justify-content: space-between;
-            z-index: 10;
+            z-index: 50;
         }
         
-        .hud-item {
+        .stat-box {
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 14px;
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-size: 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .live-indicator {
-            background: rgba(239, 68, 68, 0.3);
-            border: 1px solid rgba(239, 68, 68, 0.5);
+        .stat-value {
+            font-weight: 700;
+            color: #00ff88;
         }
         
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background: #ef4444;
-            border-radius: 50%;
-            animation: pulse 1s infinite;
-        }
-        
-        .stats-indicator {
-            background: rgba(59, 130, 246, 0.3);
-            border: 1px solid rgba(59, 130, 246, 0.5);
-        }
-        
-        /* FPS COUNTER */
-        .fps-counter {
-            position: absolute;
-            bottom: 80px;
-            left: 15px;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            z-index: 10;
-        }
-        
-        /* INFO BULLE */
-        .info-bubble {
+        /* INFO MESSAGE */
+        .info-message {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(20px);
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-size: 16px;
+            padding: 15px 25px;
+            border-radius: 20px;
             text-align: center;
-            max-width: 90%;
-            z-index: 20;
+            max-width: 80%;
+            z-index: 60;
             border: 1px solid rgba(0, 255, 136, 0.3);
-            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.1);
         }
         
-        /* CONTRÔLES MOBILE */
-        .mobile-controls {
-            position: absolute;
-            bottom: 15px;
-            left: 15px;
-            right: 15px;
+        /* CONTROLS */
+        .controls {
+            background: rgba(26, 26, 46, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 15px;
             display: flex;
             gap: 10px;
-            z-index: 10;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .mobile-btn {
+        .control-btn {
             flex: 1;
-            background: rgba(59, 130, 246, 0.9);
-            border: none;
-            color: white;
             padding: 15px;
-            border-radius: 15px;
+            border: none;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             display: flex;
@@ -183,45 +228,70 @@
             gap: 8px;
             cursor: pointer;
             transition: all 0.2s;
-            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
         }
         
-        .mobile-btn:active {
+        .control-btn:active {
             transform: scale(0.95);
-            opacity: 0.8;
         }
         
-        .mobile-btn.active {
-            background: rgba(0, 255, 136, 0.9);
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .control-btn:disabled:active {
+            transform: none;
+        }
+        
+        .btn-camera {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        
+        .btn-camera.active {
+            background: linear-gradient(135deg, #00ff88, #00cc44);
             color: #000;
         }
         
-        .mobile-btn.danger {
-            background: rgba(239, 68, 68, 0.9);
+        .btn-detect {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
         }
         
-        /* PANEL DÉTECTIONS (Drawer) */
-        .detections-drawer {
+        .btn-detect.active {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #000;
+        }
+        
+        .btn-stop {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        
+        /* DETECTIONS PANEL */
+        .detections-panel {
             position: fixed;
             bottom: -80%;
             left: 0;
             right: 0;
-            background: rgba(26, 26, 46, 0.95);
+            background: rgba(26, 26, 46, 0.98);
             backdrop-filter: blur(30px);
-            border-radius: 30px 30px 0 0;
-            padding: 20px 15px;
+            border-radius: 25px 25px 0 0;
+            padding: 20px;
             z-index: 1000;
             transition: bottom 0.3s ease;
-            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
-            max-height: 80vh;
+            max-height: 70vh;
             overflow-y: auto;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
         }
         
-        .detections-drawer.open {
+        .detections-panel.open {
             bottom: 0;
         }
         
-        .drawer-header {
+        .panel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -230,7 +300,7 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .drawer-title {
+        .panel-title {
             font-size: 18px;
             font-weight: 600;
             color: #00ff88;
@@ -245,18 +315,24 @@
             font-size: 14px;
         }
         
-        /* LISTE DÉTECTIONS */
+        /* DETECTION ITEMS */
         .detections-list {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
         
-        .detection-card {
+        .detection-item {
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 15px;
+            border-radius: 12px;
+            padding: 12px;
             border-left: 4px solid #00ff88;
+            transition: transform 0.2s;
+        }
+        
+        .detection-item:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.08);
         }
         
         .detection-header {
@@ -288,21 +364,21 @@
             flex-wrap: wrap;
         }
         
-        /* LOADER MOBILE */
-        .mobile-loader {
+        /* LOADER */
+        .loader {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             display: none;
-            z-index: 50;
+            z-index: 300;
         }
         
-        .mobile-loader.active {
+        .loader.active {
             display: block;
         }
         
-        .loader-circle {
+        .loader-spinner {
             width: 60px;
             height: 60px;
             border: 4px solid rgba(255, 255, 255, 0.1);
@@ -311,7 +387,7 @@
             animation: spin 1s linear infinite;
         }
         
-        /* TOAST NOTIFICATIONS */
+        /* TOAST */
         .toast {
             position: fixed;
             top: 20px;
@@ -319,118 +395,166 @@
             transform: translateX(-50%) translateY(-100px);
             background: rgba(0, 0, 0, 0.9);
             backdrop-filter: blur(20px);
-            padding: 12px 20px;
+            padding: 12px 24px;
             border-radius: 15px;
             font-size: 14px;
             z-index: 2000;
             transition: transform 0.3s ease;
             border: 1px solid rgba(0, 255, 136, 0.3);
+            max-width: 90%;
+            text-align: center;
         }
         
         .toast.show {
             transform: translateX(-50%) translateY(0);
         }
         
+        .toast.success {
+            border-color: rgba(0, 255, 136, 0.5);
+        }
+        
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+        
+        .toast.info {
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+        
         /* ANIMATIONS */
         @keyframes pulse {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+            50% { opacity: 0.5; }
         }
         
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
         
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* SAFE AREAS */
+        .safe-top {
+            padding-top: env(safe-area-inset-top);
+        }
+        
+        .safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
         /* RESPONSIVE */
         @media (max-width: 480px) {
-            .mobile-btn {
+            .control-btn {
                 padding: 12px;
                 font-size: 14px;
             }
             
-            .detections-drawer {
-                padding: 15px 10px;
+            .welcome-title {
+                font-size: 20px;
+            }
+            
+            .detections-panel {
+                padding: 15px;
             }
         }
         
-        /* SAFE AREAS */
-        .safe-area-top {
-            padding-top: env(safe-area-inset-top);
-        }
-        
-        .safe-area-bottom {
-            padding-bottom: env(safe-area-inset-bottom);
+        @media (min-width: 768px) {
+            .app {
+                max-width: 768px;
+                margin: 0 auto;
+                border-left: 1px solid rgba(255, 255, 255, 0.1);
+                border-right: 1px solid rgba(255, 255, 255, 0.1);
+            }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
+    <div class="app">
         <!-- HEADER -->
-        <div class="mobile-header safe-area-top">
-            <div class="header-content">
-                <div class="app-title">🎯 YOLO Mobile</div>
-                <div class="hud-item stats-indicator">
-                    <span>📊</span>
-                    <span id="stats-display">0 détections</span>
+        <div class="header safe-top">
+            <div class="header-left">
+                <div class="app-title">🎯 YOLO Notes</div>
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Inactif</span>
                 </div>
-                  <button class="camera-toggle-btn" id="btn-camera" onclick="toggleCamera()">
-            📷
-        </button>
+            </div>
+            <div id="fpsCounter" class="stat-box">
+                <span>FPS:</span>
+                <span class="stat-value" id="fpsValue">0</span>
             </div>
         </div>
         
-        <!-- CAMÉRA -->
-        <div class="camera-section">
-            <div class="camera-container">
-                <video id="video" autoplay playsinline></video>
-                <canvas id="overlay"></canvas>
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- WELCOME SCREEN -->
+            <div class="welcome-screen" id="welcomeScreen">
+                <div class="welcome-icon">🎵</div>
+                <div class="welcome-title">Détection de Notes</div>
+                <div class="welcome-text">
+                    Utilisez l'appareil photo de votre téléphone pour détecter des notes de musique en temps réel.
+                </div>
+                <button class="control-btn btn-camera" onclick="initializeCamera()" style="width: 200px;">
+                    📷 Activer la caméra
+                </button>
+            </div>
+            
+            <!-- CAMERA AREA -->
+            <div class="camera-area" id="cameraArea" style="display: none;">
+                <video id="videoElement" autoplay playsinline></video>
+                <canvas id="overlayCanvas"></canvas>
                 
-                <!-- HUD -->
-                <div class="hud">
-                    <div class="hud-item live-indicator">
-                        <div class="live-dot"></div>
-                        <span>EN DIRECT</span>
+                <!-- STATS OVERLAY -->
+                <div class="stats-overlay">
+                    <div class="stat-box">
+                        <span>Détections:</span>
+                        <span class="stat-value" id="detectionsCount">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span>Temps:</span>
+                        <span class="stat-value" id="processingTime">0ms</span>
                     </div>
                 </div>
                 
-                <!-- INFO -->
-                <div class="info-bubble" id="info-bubble">
-                    🎯 Prêt à détecter
-                </div>
-                
-                <!-- FPS -->
-                <div class="fps-counter">
-                    FPS: <span id="fps-display">0</span>
+                <!-- INFO MESSAGE -->
+                <div class="info-message" id="infoMessage" style="display: none;">
+                    <div id="infoText">Prêt à détecter</div>
                 </div>
                 
                 <!-- LOADER -->
-                <div class="mobile-loader" id="loader">
-                    <div class="loader-circle"></div>
+                <div class="loader" id="loader">
+                    <div class="loader-spinner"></div>
                 </div>
             </div>
         </div>
         
-        <!-- CONTRÔLES -->
-        <div class="mobile-controls safe-area-bottom">
-            <button class="mobile-btn" id="btn-start" onclick="startDetection()">
-                ▶️ Démarrer
+        <!-- CONTROLS -->
+        <div class="controls safe-bottom">
+            <button class="control-btn btn-camera" id="btnCamera" onclick="toggleCamera()">
+                <span id="cameraIcon">📷</span>
+                <span id="cameraText">Caméra</span>
             </button>
-            <button class="mobile-btn danger" id="btn-stop" onclick="stopDetection()" disabled>
-                ⏹️ Arrêter
+            <button class="control-btn btn-detect" id="btnDetect" onclick="startDetection()" disabled>
+                <span id="detectIcon">▶️</span>
+                <span id="detectText">Démarrer</span>
             </button>
-            <button class="mobile-btn" id="btn-toggle-drawer" onclick="toggleDrawer()">
-                📋 Liste
+            <button class="control-btn btn-stop" id="btnStop" onclick="stopDetection()" disabled>
+                <span id="stopIcon">⏹️</span>
+                <span id="stopText">Arrêter</span>
             </button>
         </div>
         
-        <!-- DRAWER DÉTECTIONS -->
-        <div class="detections-drawer" id="detectionsDrawer">
-            <div class="drawer-header">
-                <div class="drawer-title">📋 Détections actives</div>
-                <div class="detections-count" id="detectionsCount">0</div>
+        <!-- DETECTIONS PANEL -->
+        <div class="detections-panel" id="detectionsPanel">
+            <div class="panel-header">
+                <div class="panel-title">📋 Détections actives</div>
+                <div class="detections-count" id="panelDetectionsCount">0</div>
             </div>
             <div class="detections-list" id="detectionsList">
-                <!-- Les détections seront ajoutées ici -->
+                <!-- Détections affichées ici -->
             </div>
         </div>
         
@@ -440,221 +564,388 @@
 
     <script>
         // ============================================
-        // CONFIGURATION MOBILE
+        // CONFIGURATION
         // ============================================
-        const API_URL = "https://thi-creasy-lightsomely.ngrok-free.dev";
-        const MOBILE_CONFIG = {
-            detectionInterval: 1000, // 1 seconde
-            minConfidence: 50, // 50% minimum
-            maxBoxWidth: 0.9, // 90% de l'écran max
-            maxBoxHeight: 0.9
+        const CONFIG = {
+            API_URL: "https://thi-creasy-lightsomely.ngrok-free.dev",
+            DETECTION_INTERVAL: 1000, // 1 seconde
+            MIN_CONFIDENCE: 50, // 50% minimum
+            MAX_DETECTIONS_DISPLAY: 10,
+            CAMERA_CONSTRAINTS: {
+                video: {
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 1280, max: 1920 },
+                    height: { ideal: 720, max: 1080 },
+                    frameRate: { ideal: 30 }
+                }
+            }
         };
         
         // ============================================
-        // ÉLÉMENTS DOM MOBILE
+        // ÉTAT DE L'APPLICATION
         // ============================================
-        const video = document.getElementById('video');
-        const overlay = document.getElementById('overlay');
-        const ctx = overlay.getContext('2d');
-        const infoBubble = document.getElementById('info-bubble');
-        const detectionsList = document.getElementById('detectionsList');
-        const detectionsCount = document.getElementById('detectionsCount');
-        const fpsDisplay = document.getElementById('fps-display');
-        const statsDisplay = document.getElementById('stats-display');
-        const loader = document.getElementById('loader');
-        const toast = document.getElementById('toast');
-        const detectionsDrawer = document.getElementById('detectionsDrawer');
+        const AppState = {
+            cameraActive: false,
+            detectionActive: false,
+            cameraStream: null,
+            detectionInterval: null,
+            currentDetections: [],
+            lastDetectionTime: 0,
+            fps: 0,
+            frameCount: 0,
+            lastFpsUpdate: Date.now(),
+            isProcessing: false
+        };
+        
+        // ============================================
+        // RÉFÉRENCES DOM
+        // ============================================
+        const videoElement = document.getElementById('videoElement');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+        const ctx = overlayCanvas.getContext('2d');
         
         // Boutons
-        const btnStart = document.getElementById('btn-start');
-        const btnStop = document.getElementById('btn-stop');
+        const btnCamera = document.getElementById('btnCamera');
+        const btnDetect = document.getElementById('btnDetect');
+        const btnStop = document.getElementById('btnStop');
+        
+        // Textes
+        const cameraIcon = document.getElementById('cameraIcon');
+        const cameraText = document.getElementById('cameraText');
+        const detectIcon = document.getElementById('detectIcon');
+        const detectText = document.getElementById('detectText');
+        const stopIcon = document.getElementById('stopIcon');
+        const stopText = document.getElementById('stopText');
+        
+        // Status
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        
+        // Éléments d'affichage
+        const fpsValue = document.getElementById('fpsValue');
+        const detectionsCount = document.getElementById('detectionsCount');
+        const processingTime = document.getElementById('processingTime');
+        const panelDetectionsCount = document.getElementById('panelDetectionsCount');
+        const detectionsList = document.getElementById('detectionsList');
+        const infoMessage = document.getElementById('infoMessage');
+        const infoText = document.getElementById('infoText');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const cameraArea = document.getElementById('cameraArea');
+        const loader = document.getElementById('loader');
+        const toast = document.getElementById('toast');
+        const detectionsPanel = document.getElementById('detectionsPanel');
         
         // ============================================
-        // VARIABLES MOBILE
+        // FONCTIONS D'INITIALISATION
         // ============================================
-        let isStreaming = false;
-        let isProcessing = false;
-        let detectionActive = false;
-        let detectionInterval = null;
-        let currentDetections = [];
-        let frameCount = 0;
-        let lastFpsTime = Date.now();
-        let fps = 0;
-        let lastToastTime = 0;
-        
-        // ============================================
-        // INITIALISATION MOBILE
-        // ============================================
-        async function initializeMobile() {
-            showToast("📱 Initialisation...");
+        async function initializeApp() {
+            showToast("📱 Initialisation de l'application...", "info");
+            updateStatus("initializing", "Initialisation...");
             
+            // Tester la connexion API
             try {
-                // 1. Test API
-                const apiHealthy = await testMobileAPI();
+                const apiHealthy = await testAPI();
                 if (!apiHealthy) {
-                    showToast("❌ API non disponible", true);
-                    return;
+                    showToast("⚠️ API non disponible - Mode démo activé", "error");
+                    updateStatus("error", "API non disponible");
+                } else {
+                    showToast("✅ API connectée", "success");
+                    updateStatus("ready", "Prêt");
                 }
-                
-                // 2. Caméra mobile
-                const cameraReady = await initializeMobileCamera();
-                if (!cameraReady) {
-                    showToast("📷 Utilisation mode démo");
-                    setupDemoMode();
-                }
-                
-                // 3. Interface
-                updateInfoBubble("✅ Prêt à détecter");
-                showToast("✅ Système prêt");
-                
-                // Démarrer auto après 2s
-                setTimeout(() => {
-                    if (isStreaming) {
-                        startDetection();
-                    }
-                }, 2000);
-                
             } catch (error) {
-                console.error("Init error:", error);
-                showToast("❌ Erreur initialisation", true);
+                console.error("API test error:", error);
+                showToast("⚠️ Erreur de connexion", "error");
             }
+            
+            // Vérifier la disponibilité de la caméra
+            await checkCameraAvailability();
+            
+            // Afficher l'écran d'accueil
+            welcomeScreen.classList.remove('hidden');
         }
         
-        // ============================================
-        // CAMÉRA MOBILE
-        // ============================================
-        async function initializeMobileCamera() {
+        async function testAPI() {
             try {
-                // Préférences mobile
-                const constraints = {
-                    video: {
-                        facingMode: { ideal: "environment" },
-                        width: { ideal: 1280, max: 1920 },
-                        height: { ideal: 720, max: 1080 },
-                        frameRate: { ideal: 30, max: 60 }
-                    }
-                };
-                
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
-                
-                return new Promise((resolve) => {
-                    video.onloadedmetadata = () => {
-                        overlay.width = video.videoWidth;
-                        overlay.height = video.videoHeight;
-                        isStreaming = true;
-                        
-                        // Ajuster pour mobile
-                        const aspect = video.videoWidth / video.videoHeight;
-                        console.log(`📱 Caméra: ${video.videoWidth}x${video.videoHeight} (${aspect.toFixed(2)})`);
-                        
-                        resolve(true);
-                    };
-                    
-                    video.onerror = () => resolve(false);
-                });
-                
-            } catch (error) {
-                console.warn("Caméra mobile error:", error);
-                return false;
-            }
-        }
-        
-        // ============================================
-        // API MOBILE
-        // ============================================
-        async function testMobileAPI() {
-            try {
-                const response = await fetch(`${API_URL}/health`, {
-                    method: 'GET',
+                const response = await fetch(`${CONFIG.API_URL}/health`, {
                     headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
                 
+                if (!response.ok) return false;
+                
                 const data = await response.json();
-                console.log("📡 API mobile:", data);
-                
-                if (data.mobile) {
-                    showToast(`✅ API Mobile v${data.version}`);
-                }
-                
-                return data.status === "online";
+                console.log("API Health:", data);
+                return data.status === "healthy";
                 
             } catch (error) {
-                console.error("API test error:", error);
+                console.error("API test failed:", error);
+                return false;
+            }
+        }
+        
+        async function checkCameraAvailability() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                if (videoDevices.length === 0) {
+                    showToast("📱 Aucune caméra détectée", "info");
+                    return false;
+                }
+                
+                console.log(`Caméras disponibles: ${videoDevices.length}`);
+                return true;
+                
+            } catch (error) {
+                console.warn("Camera check error:", error);
                 return false;
             }
         }
         
         // ============================================
-        // DÉTECTION MOBILE
+        // GESTION DE LA CAMÉRA
         // ============================================
-        async function detectFrameMobile() {
-            if (!isStreaming || isProcessing || !detectionActive) return;
+        async function initializeCamera() {
+            showToast("📷 Activation de la caméra...", "info");
+            updateStatus("starting", "Démarrage caméra...");
             
-            isProcessing = true;
-            frameCount++;
+            try {
+                // Demander l'accès à la caméra
+                const stream = await navigator.mediaDevices.getUserMedia(CONFIG.CAMERA_CONSTRAINTS);
+                
+                // Sauvegarder le stream
+                AppState.cameraStream = stream;
+                
+                // Attacher au vidéo
+                videoElement.srcObject = stream;
+                
+                // Attendre que la vidéo soit prête
+                await new Promise((resolve) => {
+                    videoElement.onloadedmetadata = () => {
+                        // Ajuster le canvas overlay
+                        overlayCanvas.width = videoElement.videoWidth;
+                        overlayCanvas.height = videoElement.videoHeight;
+                        
+                        AppState.cameraActive = true;
+                        resolve();
+                    };
+                });
+                
+                // Mettre à jour l'interface
+                updateCameraUI(true);
+                welcomeScreen.classList.add('hidden');
+                cameraArea.style.display = 'block';
+                showInfoMessage("✅ Caméra active");
+                updateStatus("camera_active", "Caméra active");
+                
+                showToast("📹 Caméra activée avec succès", "success");
+                return true;
+                
+            } catch (error) {
+                console.error("Erreur caméra:", error);
+                
+                let errorMessage = "Erreur d'accès à la caméra";
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = "Permission refusée";
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage = "Caméra non trouvée";
+                } else if (error.name === 'NotSupportedError') {
+                    errorMessage = "Caméra non supportée";
+                }
+                
+                showToast(`❌ ${errorMessage}`, "error");
+                updateStatus("error", errorMessage);
+                showInfoMessage(`❌ ${errorMessage}`);
+                
+                return false;
+            }
+        }
+        
+        function toggleCamera() {
+            if (AppState.cameraActive) {
+                stopCamera();
+            } else {
+                initializeCamera();
+            }
+        }
+        
+        function stopCamera() {
+            // Arrêter la détection si active
+            if (AppState.detectionActive) {
+                stopDetection();
+            }
+            
+            // Arrêter le stream caméra
+            if (AppState.cameraStream) {
+                AppState.cameraStream.getTracks().forEach(track => track.stop());
+                AppState.cameraStream = null;
+            }
+            
+            // Réinitialiser l'état
+            AppState.cameraActive = false;
+            videoElement.srcObject = null;
+            
+            // Effacer l'overlay
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            
+            // Mettre à jour l'interface
+            updateCameraUI(false);
+            cameraArea.style.display = 'none';
+            welcomeScreen.classList.remove('hidden');
+            hideInfoMessage();
+            updateStatus("inactive", "Caméra arrêtée");
+            
+            // Réinitialiser les détections
+            AppState.currentDetections = [];
+            updateDetectionsDisplay();
+            
+            showToast("📷 Caméra arrêtée", "info");
+        }
+        
+        function updateCameraUI(isActive) {
+            if (isActive) {
+                cameraIcon.textContent = "📹";
+                cameraText.textContent = "En direct";
+                btnCamera.classList.add('active');
+                btnDetect.disabled = false;
+                statusDot.classList.add('active');
+            } else {
+                cameraIcon.textContent = "📷";
+                cameraText.textContent = "Caméra";
+                btnCamera.classList.remove('active');
+                btnDetect.disabled = true;
+                btnStop.disabled = true;
+                statusDot.classList.remove('active');
+            }
+        }
+        
+        // ============================================
+        // DÉTECTION ET TRAITEMENT
+        // ============================================
+        function startDetection() {
+            if (!AppState.cameraActive) {
+                showToast("❌ Activez d'abord la caméra", "error");
+                return;
+            }
+            
+            if (AppState.detectionActive) {
+                showToast("⚠️ Détection déjà en cours", "info");
+                return;
+            }
+            
+            AppState.detectionActive = true;
+            
+            // Démarrer l'intervalle de détection
+            AppState.detectionInterval = setInterval(
+                processDetection,
+                CONFIG.DETECTION_INTERVAL
+            );
+            
+            // Mettre à jour l'interface
+            btnDetect.disabled = true;
+            btnDetect.classList.add('active');
+            btnStop.disabled = false;
+            detectIcon.textContent = "🔄";
+            detectText.textContent = "En cours...";
+            updateStatus("detecting", "Détection en cours");
+            
+            showToast("▶️ Détection démarrée", "success");
+            showInfoMessage("🔍 Détection en cours...");
+            
+            // Premier traitement immédiat
+            setTimeout(processDetection, 100);
+        }
+        
+        function stopDetection() {
+            if (!AppState.detectionActive) return;
+            
+            AppState.detectionActive = false;
+            
+            // Arrêter l'intervalle
+            if (AppState.detectionInterval) {
+                clearInterval(AppState.detectionInterval);
+                AppState.detectionInterval = null;
+            }
+            
+            // Mettre à jour l'interface
+            btnDetect.disabled = false;
+            btnDetect.classList.remove('active');
+            btnStop.disabled = true;
+            detectIcon.textContent = "▶️";
+            detectText.textContent = "Démarrer";
+            
+            if (AppState.cameraActive) {
+                updateStatus("camera_active", "Caméra active");
+                showInfoMessage("✅ Détection arrêtée");
+            }
+            
+            showToast("⏹️ Détection arrêtée", "info");
+        }
+        
+        async function processDetection() {
+            if (!AppState.cameraActive || !AppState.detectionActive || AppState.isProcessing) {
+                return;
+            }
+            
+            AppState.isProcessing = true;
+            AppState.frameCount++;
+            
+            const startTime = performance.now();
             loader.classList.add('active');
             
             try {
-                // 1. Capturer frame optimisée
-                const imageBlob = await captureMobileFrame();
+                // 1. Capturer l'image de la caméra
+                const imageBlob = await captureVideoFrame();
                 if (!imageBlob) return;
                 
-                // 2. Envoyer à l'API mobile
-                const startTime = performance.now();
-                const result = await sendMobileDetection(imageBlob);
-                const processingTime = performance.now() - startTime;
+                // 2. Envoyer à l'API pour détection
+                const detectionResult = await sendToAPI(imageBlob);
                 
-                // 3. Traiter résultats
-                if (result && result.success) {
-                    processMobileDetections(result, processingTime);
+                // 3. Traiter les résultats
+                if (detectionResult && detectionResult.success) {
+                    processDetectionResults(detectionResult, startTime);
                 }
                 
-                // 4. Mettre à jour FPS
-                updateMobileFPS(processingTime);
-                
             } catch (error) {
-                console.error("Détection error:", error);
-                showToast("❌ Erreur détection", true);
+                console.error("Erreur de détection:", error);
+                showToast("❌ Erreur de détection", "error");
+                showInfoMessage("❌ Erreur de détection");
+                
             } finally {
-                isProcessing = false;
+                AppState.isProcessing = false;
                 loader.classList.remove('active');
+                
+                // Mettre à jour les FPS
+                updateFPS();
             }
         }
         
-        async function captureMobileFrame() {
-            if (!isStreaming) return null;
+        async function captureVideoFrame() {
+            if (videoElement.readyState !== 4) return null;
             
             const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
             
-            // Optimisation mobile
-            const maxSize = 1024;
-            let width = video.videoWidth;
-            let height = video.videoHeight;
+            const tempCtx = canvas.getContext('2d');
             
-            if (width > maxSize || height > maxSize) {
-                const ratio = maxSize / Math.max(width, height);
-                width = Math.floor(width * ratio);
-                height = Math.floor(height * ratio);
-            }
+            // Miroir horizontal pour correspondre à l'affichage
+            tempCtx.save();
+            tempCtx.scale(-1, 1);
+            tempCtx.translate(-canvas.width, 0);
+            tempCtx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            tempCtx.restore();
             
-            canvas.width = width;
-            canvas.height = height;
-            
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, width, height);
-            
-            // Qualité réduite pour mobile
+            // Convertir en blob avec compression pour mobile
             return new Promise((resolve) => {
-                canvas.toBlob(resolve, 'image/jpeg', 0.7);
+                canvas.toBlob(resolve, 'image/jpeg', 0.8);
             });
         }
         
-        async function sendMobileDetection(imageBlob) {
+        async function sendToAPI(imageBlob) {
             const formData = new FormData();
-            formData.append('frame', imageBlob, 'mobile_frame.jpg');
+            formData.append('frame', imageBlob, 'detection.jpg');
             
-            const response = await fetch(`${API_URL}/detect`, {
+            const response = await fetch(`${CONFIG.API_URL}/detect`, {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -662,120 +953,146 @@
                 }
             });
             
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+            
             return await response.json();
         }
         
-        // ============================================
-        // TRAITEMENT RÉSULTATS MOBILE
-        // ============================================
-        function processMobileDetections(result, processingTime) {
-            const detections = result.detections || [];
+        function processDetectionResults(result, startTime) {
+            const processingTimeMs = performance.now() - startTime;
             
-            // Filtrer par confiance
-            const filteredDetections = detections.filter(d => 
-                d.confidence >= MOBILE_CONFIG.minConfidence &&
-                d.width < overlay.width * MOBILE_CONFIG.maxBoxWidth &&
-                d.height < overlay.height * MOBILE_CONFIG.maxBoxHeight
+            // Filtrer les détections par confiance
+            const validDetections = result.detections.filter(
+                d => d.confidence >= CONFIG.MIN_CONFIDENCE
             );
             
-            currentDetections = filteredDetections;
+            // Mettre à jour l'état
+            AppState.currentDetections = validDetections;
+            AppState.lastDetectionTime = Date.now();
             
             // Mettre à jour l'interface
-            updateDetectionsListMobile(filteredDetections);
-            drawMobileDetections(filteredDetections);
+            updateDetectionsDisplay();
+            drawDetectionsOnCanvas(validDetections);
+            updatePerformanceStats(validDetections.length, processingTimeMs);
             
-            // Stats
-            statsDisplay.textContent = `${filteredDetections.length} détection(s)`;
-            
-            // Info bulle
-            if (filteredDetections.length > 0) {
-                const best = filteredDetections[0];
-                updateInfoBubble(`🎯 ${best.class_name} ${best.confidence}%`);
+            // Afficher un message informatif
+            if (validDetections.length > 0) {
+                const topDetection = validDetections[0];
+                showInfoMessage(`🎯 ${topDetection.class_name} ${topDetection.confidence}%`);
+                
+                // Ouvrir le panel des détections automatiquement
+                if (!detectionsPanel.classList.contains('open')) {
+                    detectionsPanel.classList.add('open');
+                }
             } else {
-                updateInfoBubble("🔍 Recherche...");
+                showInfoMessage("🔍 Recherche de notes...");
             }
             
-            // Log léger
-            console.log(`📊 ${filteredDetections.length} détections en ${processingTime.toFixed(0)}ms`);
+            // Log console
+            console.log(`Détections: ${validDetections.length} en ${processingTimeMs.toFixed(0)}ms`);
         }
         
-        function updateMobileFPS(processingTime) {
+        function updatePerformanceStats(detectionCount, processingTimeMs) {
+            detectionsCount.textContent = detectionCount;
+            processingTime.textContent = `${processingTimeMs.toFixed(0)}ms`;
+            panelDetectionsCount.textContent = detectionCount;
+        }
+        
+        function updateFPS() {
             const now = Date.now();
-            const elapsed = now - lastFpsTime;
+            const elapsed = now - AppState.lastFpsUpdate;
             
             if (elapsed >= 1000) {
-                fps = Math.round((frameCount * 1000) / elapsed);
-                fpsDisplay.textContent = fps;
-                frameCount = 0;
-                lastFpsTime = now;
+                AppState.fps = Math.round((AppState.frameCount * 1000) / elapsed);
+                fpsValue.textContent = AppState.fps;
+                AppState.frameCount = 0;
+                AppState.lastFpsUpdate = now;
             }
         }
         
         // ============================================
-        // DESSIN MOBILE
+        // AFFICHAGE DES DÉTECTIONS
         // ============================================
-        function drawMobileDetections(detections) {
-            ctx.clearRect(0, 0, overlay.width, overlay.height);
+        function drawDetectionsOnCanvas(detections) {
+            // Effacer le canvas
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
             
             if (detections.length === 0) return;
             
-            // Style mobile
-            const styles = {
-                high: { color: '#00ff88', width: 3, opacity: 0.3 },
-                medium: { color: '#ffcc00', width: 2, opacity: 0.2 },
-                low: { color: '#ff4444', width: 1, opacity: 0.1 }
-            };
+            // Trier par confiance (les plus hautes d'abord)
+            const sortedDetections = [...detections].sort((a, b) => b.confidence - a.confidence);
             
-            detections.forEach(det => {
-                const box = det.box_pixels || calculateBoxFromNormalized(det.box);
-                const [x1, y1, x2, y2] = box;
+            // Dessiner chaque détection
+            sortedDetections.forEach((det, index) => {
+                const boxPixels = det.box_pixels || calculatePixelsFromBox(det.box);
+                const [x1, y1, x2, y2] = boxPixels;
                 
-                // Style selon confiance
-                let style;
-                if (det.confidence >= 80) style = styles.high;
-                else if (det.confidence >= 60) style = styles.medium;
-                else style = styles.low;
+                const width = x2 - x1;
+                const height = y2 - y1;
                 
-                // Dessiner boîte (légère pour mobile)
-                ctx.strokeStyle = style.color;
-                ctx.lineWidth = style.width;
-                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                // Déterminer la couleur selon la confiance
+                const color = getConfidenceColor(det.confidence);
                 
-                // Overlay léger
-                ctx.fillStyle = style.color.replace(')', `, ${style.opacity})`);
-                ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+                // Dessiner la boîte
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x1, y1, width, height);
                 
-                // Label minimaliste
-                ctx.fillStyle = style.color;
-                const label = `${det.confidence}%`;
-                ctx.font = 'bold 14px Arial';
-                ctx.fillText(label, x1 + 5, y1 - 8);
+                // Dessiner le fond semi-transparent
+                ctx.fillStyle = color.replace(')', ', 0.1)').replace('rgb', 'rgba');
+                ctx.fillRect(x1, y1, width, height);
+                
+                // Préparer le label
+                const label = `${det.class_name} ${det.confidence}%`;
+                const fontSize = Math.max(14, Math.min(20, width / 10));
+                
+                // Dessiner le fond du label
+                ctx.fillStyle = color;
+                ctx.font = `bold ${fontSize}px Arial`;
+                const textWidth = ctx.measureText(label).width;
+                ctx.fillRect(x1, y1 - fontSize - 4, textWidth + 10, fontSize + 8);
+                
+                // Dessiner le texte
+                ctx.fillStyle = '#000';
+                ctx.fillText(label, x1 + 5, y1 - 5);
+                
+                // ID de la détection
+                ctx.fillStyle = color;
+                ctx.font = `bold ${fontSize - 4}px Arial`;
+                ctx.fillText(`#${det.id}`, x1 + width - 25, y1 + 20);
             });
         }
         
-        function calculateBoxFromNormalized(normalizedBox) {
-            if (!normalizedBox || normalizedBox.length !== 4) return [0, 0, 0, 0];
+        function calculatePixelsFromBox(normalizedBox) {
+            if (!normalizedBox || normalizedBox.length !== 4) {
+                return [0, 0, 0, 0];
+            }
             
             return [
-                normalizedBox[0] * overlay.width,
-                normalizedBox[1] * overlay.height,
-                normalizedBox[2] * overlay.width,
-                normalizedBox[3] * overlay.height
+                normalizedBox[0] * overlayCanvas.width,
+                normalizedBox[1] * overlayCanvas.height,
+                normalizedBox[2] * overlayCanvas.width,
+                normalizedBox[3] * overlayCanvas.height
             ];
         }
         
-        // ============================================
-        // INTERFACE MOBILE
-        // ============================================
-        function updateDetectionsListMobile(detections) {
-            detectionsCount.textContent = detections.length;
+        function getConfidenceColor(confidence) {
+            if (confidence >= 90) return '#00ff88';
+            if (confidence >= 70) return '#22c55e';
+            if (confidence >= 50) return '#f59e0b';
+            return '#ef4444';
+        }
+        
+        function updateDetectionsDisplay() {
+            const detections = AppState.currentDetections.slice(0, CONFIG.MAX_DETECTIONS_DISPLAY);
             
             if (detections.length === 0) {
                 detectionsList.innerHTML = `
-                    <div style="text-align: center; padding: 30px; color: rgba(255,255,255,0.5);">
-                        <div>🔍</div>
-                        <div style="margin-top: 10px;">Aucune détection</div>
+                    <div style="text-align: center; padding: 30px; color: rgba(255, 255, 255, 0.5);">
+                        <div style="font-size: 40px; margin-bottom: 10px;">🔍</div>
+                        <div>Aucune détection pour le moment</div>
                     </div>
                 `;
                 return;
@@ -783,11 +1100,11 @@
             
             let html = '';
             
-            detections.slice(0, 10).forEach(det => {
-                const confidenceColor = getMobileConfidenceColor(det.confidence);
+            detections.forEach(det => {
+                const confidenceColor = getConfidenceColor(det.confidence);
                 
                 html += `
-                    <div class="detection-card">
+                    <div class="detection-item">
                         <div class="detection-header">
                             <div class="detection-name">${det.class_name}</div>
                             <div class="detection-confidence" style="background: ${confidenceColor}">
@@ -806,157 +1123,129 @@
             detectionsList.innerHTML = html;
         }
         
-        function getMobileConfidenceColor(confidence) {
-            if (confidence >= 90) return '#00ff88';
-            if (confidence >= 70) return '#22c55e';
-            if (confidence >= 50) return '#f59e0b';
-            return '#ef4444';
-        }
-        
-        function updateInfoBubble(message) {
-            infoBubble.textContent = message;
-            infoBubble.style.display = 'block';
+        // ============================================
+        // GESTION DE L'INTERFACE UTILISATEUR
+        // ============================================
+        function updateStatus(state, message) {
+            statusText.textContent = message;
             
-            // Cacher après 3 secondes si pas d'erreur
-            if (!message.includes('❌')) {
-                setTimeout(() => {
-                    infoBubble.style.display = 'none';
-                }, 3000);
+            switch(state) {
+                case 'initializing':
+                    statusDot.style.background = '#f59e0b';
+                    break;
+                case 'ready':
+                    statusDot.style.background = '#3b82f6';
+                    break;
+                case 'starting':
+                    statusDot.style.background = '#f59e0b';
+                    break;
+                case 'camera_active':
+                    statusDot.style.background = '#00ff88';
+                    break;
+                case 'detecting':
+                    statusDot.style.background = '#8b5cf6';
+                    break;
+                case 'error':
+                    statusDot.style.background = '#ef4444';
+                    break;
+                case 'inactive':
+                    statusDot.style.background = '#6b7280';
+                    break;
+                default:
+                    statusDot.style.background = '#6b7280';
             }
         }
         
-        function showToast(message, isError = false) {
-            const now = Date.now();
-            if (now - lastToastTime < 2000) return;
+        function showInfoMessage(message) {
+            infoText.textContent = message;
+            infoMessage.style.display = 'block';
             
-            lastToastTime = now;
+            // Cacher après 3 secondes
+            clearTimeout(window.infoMessageTimeout);
+            window.infoMessageTimeout = setTimeout(() => {
+                if (!message.includes('❌') && !message.includes('Erreur')) {
+                    infoMessage.style.display = 'none';
+                }
+            }, 3000);
+        }
+        
+        function hideInfoMessage() {
+            infoMessage.style.display = 'none';
+        }
+        
+        function showToast(message, type = "info") {
             toast.textContent = message;
-            toast.style.background = isError 
-                ? 'rgba(239, 68, 68, 0.9)' 
-                : 'rgba(0, 0, 0, 0.9)';
-            
+            toast.className = `toast ${type}`;
             toast.classList.add('show');
             
-            setTimeout(() => {
+            clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => {
                 toast.classList.remove('show');
             }, 3000);
         }
         
         // ============================================
-        // CONTRÔLES MOBILE
-        // ============================================
-        function startDetection() {
-            if (!isStreaming) {
-                showToast("📷 Activez d'abord la caméra", true);
-                return;
-            }
-            
-            detectionActive = true;
-            
-            if (detectionInterval) clearInterval(detectionInterval);
-            detectionInterval = setInterval(
-                detectFrameMobile, 
-                MOBILE_CONFIG.detectionInterval
-            );
-            
-            // UI
-            btnStart.disabled = true;
-            btnStop.disabled = false;
-            btnStart.classList.remove('active');
-            
-            showToast("▶️ Détection démarrée");
-        }
-        
-        function stopDetection() {
-            detectionActive = false;
-            
-            if (detectionInterval) {
-                clearInterval(detectionInterval);
-                detectionInterval = null;
-            }
-            
-            // UI
-            btnStart.disabled = false;
-            btnStop.disabled = true;
-            
-            showToast("⏹️ Détection arrêtée");
-        }
-        
-        function toggleDrawer() {
-            detectionsDrawer.classList.toggle('open');
-        }
-        
-        function setupDemoMode() {
-            isStreaming = true;
-            overlay.width = 720;
-            overlay.height = 1280;
-            
-            // Détection de démo
-            drawDemoDetections();
-            
-            showToast("📱 Mode démo activé");
-        }
-        
-        function drawDemoDetections() {
-            ctx.clearRect(0, 0, overlay.width, overlay.height);
-            
-            // Exemple de boîte
-            const x = overlay.width * 0.3;
-            const y = overlay.height * 0.4;
-            const width = overlay.width * 0.4;
-            const height = overlay.height * 0.2;
-            
-            ctx.strokeStyle = '#00ff88';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x, y, width, height);
-            
-            ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';
-            ctx.fillRect(x, y, width, height);
-            
-            ctx.fillStyle = '#00ff88';
-            ctx.font = 'bold 18px Arial';
-            ctx.fillText('📝 Note 95%', x + 10, y - 10);
-        }
-        
-        // ============================================
-        // GESTION TOUCH
+        // GESTION DES PANELS ET GESTES
         // ============================================
         let touchStartY = 0;
         
-        detectionsDrawer.addEventListener('touchstart', (e) => {
+        detectionsPanel.addEventListener('touchstart', (e) => {
             touchStartY = e.touches[0].clientY;
         }, { passive: true });
         
-        detectionsDrawer.addEventListener('touchmove', (e) => {
-            if (!detectionsDrawer.classList.contains('open')) return;
+        detectionsPanel.addEventListener('touchmove', (e) => {
+            if (!detectionsPanel.classList.contains('open')) return;
             
             const touchY = e.touches[0].clientY;
             const diff = touchStartY - touchY;
             
-            if (diff < -50) { // Swipe down
-                detectionsDrawer.classList.remove('open');
+            // Swipe vers le bas pour fermer
+            if (diff < -50) {
+                detectionsPanel.classList.remove('open');
             }
         }, { passive: true });
         
         // ============================================
-        // DÉMARRAGE
+        // GESTION DE L'ORIENTATION
         // ============================================
-        window.addEventListener('DOMContentLoaded', initializeMobile);
-        
-        // Gestion orientation
         window.addEventListener('orientationchange', () => {
+            showToast("🔄 Adaptation à l'orientation...", "info");
+            
             setTimeout(() => {
-                location.reload();
-            }, 100);
+                if (AppState.cameraActive) {
+                    // Redimensionner le canvas
+                    overlayCanvas.width = videoElement.videoWidth;
+                    overlayCanvas.height = videoElement.videoHeight;
+                    
+                    // Redessiner les détections
+                    drawDetectionsOnCanvas(AppState.currentDetections);
+                }
+            }, 300);
         });
         
-        // Prévenir la fermeture
+        // ============================================
+        // PRÉVENTION DE LA FERMETURE
+        // ============================================
         window.addEventListener('beforeunload', (e) => {
-            if (detectionActive) {
+            if (AppState.detectionActive) {
                 e.preventDefault();
-                e.returnValue = 'La détection est en cours. Voulez-vous vraiment quitter?';
+                e.returnValue = 'La détection est en cours. Voulez-vous vraiment quitter ?';
+                return 'La détection est en cours. Voulez-vous vraiment quitter ?';
             }
         });
+        
+        // ============================================
+        // DÉMARRAGE DE L'APPLICATION
+        // ============================================
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        
+        // Exporter certaines fonctions pour le debug
+        window.AppState = AppState;
+        window.toggleCamera = toggleCamera;
+        window.startDetection = startDetection;
+        window.stopDetection = stopDetection;
+        
+        console.log("🎯 Application YOLO Mobile chargée et prête");
     </script>
 </body>
 </html>
