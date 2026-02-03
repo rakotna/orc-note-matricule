@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLO Debug - Visualisation des détections</title>
+    <title>YOLO Debug - Détection en temps réel</title>
     <style>
         * {
             margin: 0;
@@ -44,17 +44,13 @@
             margin-bottom: 10px;
         }
         
-        .subtitle {
-            color: #94a3b8;
-            font-size: 1rem;
-        }
-        
         /* CAMÉRA */
         .camera-section {
             background: #1e293b;
             border-radius: 16px;
             padding: 15px;
             border: 1px solid #334155;
+            position: relative;
         }
         
         .camera-container {
@@ -70,6 +66,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transform: scaleX(-1); /* Miroir pour caméra frontale */
         }
         
         #overlay {
@@ -81,7 +78,35 @@
             pointer-events: none;
         }
         
-        /* CONTROLES */
+        /* INDICATEUR EN DIRECT */
+        .live-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 10;
+        }
+        
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        /* CONTRÔLES */
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -100,6 +125,10 @@
             transition: all 0.3s;
             flex: 1;
             min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
         .btn:hover {
@@ -107,13 +136,10 @@
             transform: translateY(-2px);
         }
         
-        .btn-primary {
+        .btn.active {
             background: #00ff00;
             color: #000;
-        }
-        
-        .btn-primary:hover {
-            background: #00cc00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
         }
         
         .btn-danger {
@@ -149,104 +175,6 @@
             gap: 10px;
         }
         
-        .card-title .icon {
-            font-size: 1.2rem;
-        }
-        
-        /* STATUT */
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 10px;
-            background: #0f172a;
-            margin-bottom: 5px;
-        }
-        
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-        
-        .status-dot.connected {
-            background: #00ff00;
-            box-shadow: 0 0 10px #00ff00;
-            animation: pulse 2s infinite;
-        }
-        
-        .status-dot.connecting {
-            background: #f59e0b;
-            animation: pulse 1s infinite;
-        }
-        
-        .status-dot.error {
-            background: #ef4444;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        /* DÉTECTIONS */
-        .detections-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .detection-item {
-            background: #0f172a;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 10px;
-            border-left: 4px solid #3b82f6;
-            transition: all 0.2s;
-        }
-        
-        .detection-item:hover {
-            transform: translateX(5px);
-            background: #1a2336;
-        }
-        
-        .detection-item.note {
-            border-left-color: #00ff00;
-            background: rgba(0, 255, 0, 0.05);
-        }
-        
-        .detection-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-        
-        .detection-class {
-            font-weight: bold;
-            font-size: 1rem;
-        }
-        
-        .detection-confidence {
-            background: #3b82f6;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-        
-        .detection-note .detection-confidence {
-            background: #00ff00;
-            color: #000;
-        }
-        
-        .detection-details {
-            font-size: 0.85rem;
-            color: #94a3b8;
-            margin-top: 5px;
-        }
-        
         /* STATISTIQUES */
         .stats-grid {
             display: grid;
@@ -273,34 +201,66 @@
             color: #94a3b8;
         }
         
-        /* CLASSES */
-        .classes-list {
+        /* DÉTECTIONS */
+        .detections-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .detection-item {
+            background: #0f172a;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            border-left: 4px solid #00ff00;
+            transition: all 0.2s;
+        }
+        
+        .detection-item:hover {
+            transform: translateX(5px);
+            background: #1a2336;
+        }
+        
+        .detection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .detection-class {
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        
+        .detection-confidence {
+            background: #00ff00;
+            color: black;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .detection-details {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 5px;
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
         }
         
-        .class-badge {
-            background: #3b82f6;
-            color: white;
-            padding: 4px 10px;
+        /* FPS COUNTER */
+        .fps-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        
-        /* DEBUG INFO */
-        .debug-info {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            font-family: 'Monaco', 'Consolas', monospace;
-            font-size: 0.85rem;
-            line-height: 1.4;
-            max-height: 300px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-break: break-all;
+            font-size: 0.9rem;
+            z-index: 10;
         }
         
         /* RESPONSIVE */
@@ -310,133 +270,142 @@
             }
         }
         
-        /* LÉGENDE DES COULEURS */
-        .legend {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-            font-size: 0.8rem;
+        /* LOADER */
+        .loader {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
         }
         
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        .loader.active {
+            display: block;
         }
         
-        .legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #00ff00;
+            animation: spin 1s linear infinite;
         }
         
-        .color-note { background: #00ff00; }
-        .color-object { background: #3b82f6; }
-        .color-high-conf { background: #00ff00; }
-        .color-medium-conf { background: #f59e0b; }
-        .color-low-conf { background: #ef4444; }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* INFO BULLE */
+        .info-bubble {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 10;
+            max-width: 80%;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🔍 YOLO DEBUG VISUALIZER</h1>
-            <p class="subtitle">Visualisation en temps réel des détections YOLO avec labels et boîtes</p>
+            <h1>🎯 YOLO Détection Temps Réel</h1>
+            <p style="color: #94a3b8;">Détection dynamique avec YOLOv8 - Classe: Notes</p>
         </header>
         
-        <!-- SECTION GAUCHE : CAMÉRA ET VISUALISATION -->
+        <!-- SECTION GAUCHE : CAMÉRA -->
         <div class="camera-section">
+            <!-- Indicateur en direct -->
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span>EN DIRECT</span>
+            </div>
+            
+            <!-- Info bulle -->
+            <div class="info-bubble" id="info-bubble">
+                🔍 Pointage vers une note...
+            </div>
+            
+            <!-- Caméra -->
             <div class="camera-container">
                 <video id="video" autoplay playsinline></video>
                 <canvas id="overlay"></canvas>
+                
+                <!-- Loader -->
+                <div class="loader" id="loader">
+                    <div class="spinner"></div>
+                </div>
+                
+                <!-- FPS counter -->
+                <div class="fps-counter">
+                    FPS: <span id="fps-display">0</span> | 
+                    Détections: <span id="detections-display">0</span>
+                </div>
             </div>
             
-            <!-- LÉGENDE -->
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color color-note"></div>
-                    <span>Notes détectées</span>
+            <!-- Contrôles -->
+            <div class="controls">
+                <button class="btn" onclick="startDetection()" id="btn-start">
+                    ▶️ Démarrer
+                </button>
+                <button class="btn btn-danger" onclick="stopDetection()" id="btn-stop" disabled>
+                    ⏹️ Arrêter
+                </button>
+                <button class="btn" onclick="singleDetection()" id="btn-single">
+                    📸 Capture unique
+                </button>
+                <button class="btn" onclick="clearOverlay()">
+                    🧹 Effacer
+                </button>
+            </div>
+            
+            <!-- Paramètres -->
+            <div style="margin-top: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <label style="font-size: 0.9rem;">Fréquence:</label>
+                    <select id="frequency" style="background: #0f172a; color: white; border: 1px solid #334155; padding: 5px; border-radius: 5px;">
+                        <option value="500">0.5s (Rapide)</option>
+                        <option value="1000" selected>1s (Normal)</option>
+                        <option value="2000">2s (Lent)</option>
+                        <option value="5000">5s (Très lent)</option>
+                    </select>
                 </div>
-                <div class="legend-item">
-                    <div class="legend-color color-object"></div>
-                    <span>Autres objets</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color color-high-conf"></div>
-                    <span>Confiance > 80%</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color color-medium-conf"></div>
-                    <span>Confiance 50-80%</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color color-low-conf"></div>
-                    <span>Confiance < 50%</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-size: 0.9rem;">Seuil confiance:</label>
+                    <input type="range" id="confidence-slider" min="10" max="100" value="30" style="flex: 1;">
+                    <span id="confidence-value" style="font-weight: bold;">30%</span>
                 </div>
             </div>
         </div>
         
         <!-- SECTION DROITE : INFORMATIONS -->
         <div class="right-panel">
-            <!-- STATUT -->
-            <div class="card">
-                <div class="card-title">
-                    <span class="icon">📡</span>
-                    <span>Statut du système</span>
-                </div>
-                <div class="status">
-                    <div class="status-dot connecting" id="status-dot"></div>
-                    <div id="status-text">Initialisation...</div>
-                </div>
-                <div id="api-info" style="font-size: 0.85rem; color: #94a3b8; margin-top: 10px;">
-                    URL: <span id="api-url">Chargement...</span>
-                </div>
-            </div>
-            
-            <!-- CONTRÔLES -->
-            <div class="card">
-                <div class="card-title">
-                    <span class="icon">🎮</span>
-                    <span>Contrôles</span>
-                </div>
-                <div class="controls">
-                    <button class="btn btn-primary" onclick="testConnection()">
-                        🔗 Test API
-                    </button>
-                    <button class="btn" onclick="captureAndDetect()" id="btn-detect">
-                        📸 Détecter
-                    </button>
-                    <button class="btn" onclick="startAutoDetection()" id="btn-auto">
-                        🔄 Auto (2s)
-                    </button>
-                    <button class="btn btn-danger" onclick="stopAutoDetection()" id="btn-stop">
-                        ⏹️ Stop
-                    </button>
-                </div>
-            </div>
-            
             <!-- STATISTIQUES -->
             <div class="card">
                 <div class="card-title">
-                    <span class="icon">📊</span>
-                    <span>Statistiques</span>
+                    <span>📊 Statistiques temps réel</span>
                 </div>
-                <div class="stats-grid" id="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value" id="stat-detections">0</div>
-                        <div class="stat-label">Détections</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="stat-notes">0</div>
-                        <div class="stat-label">Notes</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="stat-time">0ms</div>
-                        <div class="stat-label">Temps YOLO</div>
-                    </div>
+                <div class="stats-grid">
                     <div class="stat-item">
                         <div class="stat-value" id="stat-fps">0</div>
-                        <div class="stat-label">FPS</div>
+                        <div class="stat-label">FPS détection</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-latency">0ms</div>
+                        <div class="stat-label">Latence YOLO</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-total">0</div>
+                        <div class="stat-label">Détections totales</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-active">0</div>
+                        <div class="stat-label">Actives maintenant</div>
                     </div>
                 </div>
             </div>
@@ -444,8 +413,7 @@
             <!-- DÉTECTIONS ACTIVES -->
             <div class="card">
                 <div class="card-title">
-                    <span class="icon">📦</span>
-                    <span>Détections actives (<span id="detections-count">0</span>)</span>
+                    <span>📦 Détections actives (<span id="detections-count">0</span>)</span>
                 </div>
                 <div class="detections-list" id="detections-list">
                     <div style="text-align: center; color: #64748b; padding: 20px;">
@@ -454,27 +422,34 @@
                 </div>
             </div>
             
-            <!-- CLASSES DÉTECTÉES -->
+            <!-- LOGS -->
             <div class="card">
                 <div class="card-title">
-                    <span class="icon">🏷️</span>
-                    <span>Classes détectées</span>
+                    <span>📝 Logs système</span>
                 </div>
-                <div class="classes-list" id="classes-list">
-                    <div style="color: #64748b; font-style: italic;">
-                        Chargement des classes...
-                    </div>
+                <div style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
+                    <div id="logs"></div>
                 </div>
             </div>
             
-            <!-- LOGS DEBUG -->
+            <!-- INFO MODÈLE -->
             <div class="card">
                 <div class="card-title">
-                    <span class="icon">🐛</span>
-                    <span>Logs de débogage</span>
+                    <span>🤖 Info modèle</span>
                 </div>
-                <div class="debug-info" id="debug-info">
-                    Initialisation du système...
+                <div style="font-size: 0.9rem;">
+                    <div style="margin-bottom: 5px;">
+                        <strong>Classe:</strong> <span id="model-class">Notes</span>
+                    </div>
+                    <div style="margin-bottom: 5px;">
+                        <strong>GPU:</strong> <span id="model-gpu">Tesla T4</span>
+                    </div>
+                    <div>
+                        <strong>URL API:</strong> 
+                        <div style="word-break: break-all; font-size: 0.8rem; color: #94a3b8; margin-top: 5px;" id="api-url">
+                            Chargement...
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -492,103 +467,68 @@
         const video = document.getElementById('video');
         const overlay = document.getElementById('overlay');
         const ctx = overlay.getContext('2d');
-        const statusDot = document.getElementById('status-dot');
-        const statusText = document.getElementById('status-text');
-        const apiUrlDisplay = document.getElementById('api-url');
+        const loader = document.getElementById('loader');
+        const infoBubble = document.getElementById('info-bubble');
         const detectionsList = document.getElementById('detections-list');
         const detectionsCount = document.getElementById('detections-count');
-        const classesList = document.getElementById('classes-list');
-        const debugInfo = document.getElementById('debug-info');
-        const statsGrid = document.getElementById('stats-grid');
+        const logsContainer = document.getElementById('logs');
+        const fpsDisplay = document.getElementById('fps-display');
+        const detectionsDisplay = document.getElementById('detections-display');
         
-        // Éléments statistiques
-        const statDetections = document.getElementById('stat-detections');
-        const statNotes = document.getElementById('stat-notes');
-        const statTime = document.getElementById('stat-time');
+        // Statistiques
         const statFps = document.getElementById('stat-fps');
+        const statLatency = document.getElementById('stat-latency');
+        const statTotal = document.getElementById('stat-total');
+        const statActive = document.getElementById('stat-active');
+        
+        // Contrôles
+        const btnStart = document.getElementById('btn-start');
+        const btnStop = document.getElementById('btn-stop');
+        const btnSingle = document.getElementById('btn-single');
+        const confidenceSlider = document.getElementById('confidence-slider');
+        const confidenceValue = document.getElementById('confidence-value');
+        const frequencySelect = document.getElementById('frequency');
         
         // ================================================================
         // VARIABLES GLOBALES
         // ================================================================
         let isStreaming = false;
         let isProcessing = false;
-        let apiConnected = false;
-        let autoInterval = null;
-        let detectionFrames = 0;
-        let lastFpsUpdate = Date.now();
+        let detectionActive = false;
+        let detectionInterval = null;
+        let frameCount = 0;
+        let lastFpsTime = Date.now();
         let fps = 0;
-        let classColors = {};
-        let allClasses = [];
+        let totalDetections = 0;
+        let lastDetectionTime = 0;
+        let currentDetections = [];
         
         // ================================================================
         // INITIALISATION
         // ================================================================
         async function initialize() {
             console.log("🚀 Initialisation du système...");
-            apiUrlDisplay.textContent = API_URL;
             
-            // 1. Vérifier l'API
-            await checkAPI();
+            // Afficher l'URL API
+            document.getElementById('api-url').textContent = API_URL;
             
-            // 2. Initialiser la caméra
+            // Initialiser la caméra
             await initializeCamera();
             
-            // 3. Mettre à jour l'interface
-            if (apiConnected && isStreaming) {
-                updateStatus("✅ Système prêt", "connected");
-                addDebugLog("Système initialisé avec succès");
-            }
-        }
-        
-        // ================================================================
-        // GESTION API
-        // ================================================================
-        async function checkAPI() {
-            updateStatus("Connexion API...", "connecting");
-            addDebugLog(`Test de connexion à: ${API_URL}`);
+            // Tester la connexion API
+            await testAPI();
             
-            try {
-                const response = await fetch(`${API_URL}/health`, {
-                    headers: { 'ngrok-skip-browser-warning': 'true' }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    apiConnected = true;
-                    updateStatus(`✅ API connectée`, "connected");
-                    
-                    // Récupérer les classes
-                    if (data.class_names) {
-                        allClasses = Object.values(data.class_names);
-                        updateClassesList(allClasses);
-                        generateClassColors(allClasses);
-                    }
-                    
-                    addDebugLog(`API OK - Classes: ${allClasses.length} | GPU: ${data.gpu}`);
-                    return true;
-                }
-                
-            } catch (error) {
-                apiConnected = false;
-                updateStatus(`❌ API hors ligne`, "error");
-                addDebugLog(`Erreur API: ${error.message}`);
-            }
-            
-            return false;
-        }
-        
-        function updateStatus(message, type) {
-            statusText.textContent = message;
-            statusDot.className = `status-dot ${type}`;
+            // Mettre à jour l'interface
+            updateInfoBubble("✅ Système prêt - Cliquez sur 'Démarrer'");
+            addLog("Système initialisé");
         }
         
         // ================================================================
-        // GESTION CAMÉRA
+        // INITIALISATION CAMÉRA
         // ================================================================
         async function initializeCamera() {
             try {
-                updateStatus("Initialisation caméra...", "connecting");
+                updateInfoBubble("📷 Initialisation de la caméra...");
                 
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
@@ -605,7 +545,7 @@
                         overlay.width = video.videoWidth;
                         overlay.height = video.videoHeight;
                         isStreaming = true;
-                        addDebugLog(`Caméra: ${video.videoWidth}x${video.videoHeight}`);
+                        addLog(`Caméra initialisée: ${video.videoWidth}x${video.videoHeight}`);
                         resolve();
                     };
                 });
@@ -614,8 +554,8 @@
                 
             } catch (error) {
                 isStreaming = false;
-                updateStatus("❌ Erreur caméra", "error");
-                addDebugLog(`Erreur caméra: ${error.message}`);
+                updateInfoBubble("❌ Erreur caméra");
+                addLog(`Erreur caméra: ${error.message}`);
                 
                 // Mode démo
                 showDemoMode();
@@ -624,25 +564,75 @@
         }
         
         function showDemoMode() {
-            addDebugLog("Mode démo activé (pas de caméra)");
+            addLog("Mode démo activé");
             overlay.width = 640;
             overlay.height = 480;
             isStreaming = true;
+            
+            // Dessiner un exemple
+            drawDemoDetection();
+        }
+        
+        function drawDemoDetection() {
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            
+            // Exemple de boîte
+            const x = overlay.width * 0.3;
+            const y = overlay.height * 0.3;
+            const width = overlay.width * 0.4;
+            const height = overlay.height * 0.4;
+            
+            ctx.strokeStyle = "#00ff00";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, width, height);
+            
+            ctx.fillStyle = "#00ff00";
+            ctx.font = "bold 20px Arial";
+            ctx.fillText("📝 Notes 95%", x + 10, y - 10);
+            
+            ctx.fillStyle = "rgba(0, 255, 0, 0.1)";
+            ctx.fillRect(x, y, width, height);
         }
         
         // ================================================================
-        // CAPTURE ET DÉTECTION
+        // TEST API
         // ================================================================
-        async function captureAndDetect() {
-            if (!isStreaming || !apiConnected || isProcessing) return;
-            
-            isProcessing = true;
-            detectionFrames++;
+        async function testAPI() {
+            addLog("Test de connexion API...");
             
             try {
-                addDebugLog("Capture en cours...");
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
                 
-                // Capturer une frame
+                // Mettre à jour les infos modèle
+                document.getElementById('model-class').textContent = 
+                    data.class_names ? Object.values(data.class_names).join(', ') : 'Notes';
+                document.getElementById('model-gpu').textContent = 
+                    data.gpu ? 'Tesla T4 (GPU)' : 'CPU';
+                
+                addLog(`✅ API connectée - ${data.classes_count || 1} classe(s)`);
+                return true;
+                
+            } catch (error) {
+                addLog(`❌ Erreur API: ${error.message}`);
+                return false;
+            }
+        }
+        
+        // ================================================================
+        // DÉTECTION PRINCIPALE
+        // ================================================================
+        async function detectFrame() {
+            if (!isStreaming || isProcessing || !detectionActive) return;
+            
+            isProcessing = true;
+            frameCount++;
+            
+            try {
+                // Afficher le loader
+                loader.classList.add('active');
+                
+                // Capturer la frame
                 const imageBlob = await captureFrame();
                 if (!imageBlob) return;
                 
@@ -654,28 +644,32 @@
                 if (result) {
                     // Traiter les résultats
                     processDetectionResult(result, processingTime);
+                    lastDetectionTime = Date.now();
                 }
                 
             } catch (error) {
-                addDebugLog(`Erreur détection: ${error.message}`);
-                updateStatus("❌ Erreur détection", "error");
+                addLog(`❌ Erreur: ${error.message}`);
+                updateInfoBubble("❌ Erreur de détection");
             } finally {
                 isProcessing = false;
+                loader.classList.remove('active');
             }
         }
         
         async function captureFrame() {
-            if (!isStreaming) return null;
+            if (!isStreaming || video.readyState !== 4) return null;
             
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const tempCtx = canvas.getContext('2d');
             
-            // Miroir horizontal
-            tempCtx.translate(canvas.width, 0);
+            // Miroir horizontal pour correspondre à l'affichage
+            tempCtx.save();
             tempCtx.scale(-1, 1);
+            tempCtx.translate(-canvas.width, 0);
             tempCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            tempCtx.restore();
             
             return new Promise((resolve) => {
                 canvas.toBlob(resolve, 'image/jpeg', 0.9);
@@ -705,39 +699,59 @@
         // TRAITEMENT DES RÉSULTATS
         // ================================================================
         function processDetectionResult(result, processingTime) {
+            // Mettre à jour les détections courantes
+            currentDetections = result.detections || [];
+            
             // Mettre à jour les statistiques
             updateStatistics(result, processingTime);
             
-            // Mettre à jour la liste des détections
-            updateDetectionsList(result.detections);
+            // Mettre à jour l'affichage
+            updateDetectionsList(currentDetections);
             
             // Dessiner sur l'overlay
-            drawDetections(result.detections);
+            drawDetections(currentDetections);
             
-            // Mettre à jour le statut
-            updateStatus(`✅ ${result.detections.length} détections`, "connected");
+            // Mettre à jour le FPS
+            updateFPS();
             
-            // Debug log
-            addDebugLog(`Détections: ${result.detections.length} | Temps: ${processingTime.toFixed(0)}ms`);
+            // Log
+            addLog(`✅ ${currentDetections.length} détection(s) en ${processingTime.toFixed(0)}ms`);
+            
+            // Mettre à jour l'info bulle
+            if (currentDetections.length > 0) {
+                const bestDetection = currentDetections[0];
+                updateInfoBubble(`🎯 ${bestDetection.class_name} ${bestDetection.confidence}%`);
+            } else {
+                updateInfoBubble("🔍 Recherche de notes...");
+            }
         }
         
         function updateStatistics(result, processingTime) {
             const stats = result.statistics || {};
             
-            // Mettre à jour les stats
-            statDetections.textContent = stats.total_detections || result.detections.length;
-            statNotes.textContent = stats.note_detections_count || 
-                result.detections.filter(d => d.is_note).length;
-            statTime.textContent = `${stats.yolo_time_ms || 0}ms`;
+            // Mettre à jour les stats affichées
+            statLatency.textContent = `${stats.yolo_time_ms || processingTime.toFixed(0)}ms`;
+            statActive.textContent = currentDetections.length;
             
-            // Calculer FPS
+            // Incrémenter le total
+            totalDetections += currentDetections.length;
+            statTotal.textContent = totalDetections;
+            
+            // Mettre à jour l'affichage FPS
+            fpsDisplay.textContent = fps;
+            detectionsDisplay.textContent = currentDetections.length;
+        }
+        
+        function updateFPS() {
             const now = Date.now();
-            if (now - lastFpsUpdate >= 1000) {
-                fps = detectionFrames;
-                detectionFrames = 0;
-                lastFpsUpdate = now;
+            const elapsed = now - lastFpsTime;
+            
+            if (elapsed >= 1000) {
+                fps = Math.round((frameCount * 1000) / elapsed);
+                statFps.textContent = fps;
+                frameCount = 0;
+                lastFpsTime = now;
             }
-            statFps.textContent = fps;
         }
         
         function updateDetectionsList(detections) {
@@ -754,43 +768,33 @@
             
             let html = '';
             
-            // Trier par confiance (décroissant)
+            // Trier par confiance
             detections.sort((a, b) => b.confidence - a.confidence);
             
-            // Limiter à 10 affichages
-            const displayDetections = detections.slice(0, 10);
+            // Limiter à 8 affichages
+            const displayDetections = detections.slice(0, 8);
             
             displayDetections.forEach((det, index) => {
-                const isNote = det.is_note;
-                const color = getColorForConfidence(det.confidence);
+                const confidenceColor = getConfidenceColor(det.confidence);
                 
                 html += `
-                    <div class="detection-item ${isNote ? 'note' : ''}" data-id="${det.id}">
+                    <div class="detection-item">
                         <div class="detection-header">
                             <div class="detection-class">
                                 ${det.class_name} #${det.id}
                             </div>
-                            <div class="detection-confidence" style="background: ${color}">
+                            <div class="detection-confidence" style="background: ${confidenceColor}">
                                 ${det.confidence}%
                             </div>
                         </div>
                         <div class="detection-details">
-                            📏 ${det.width}x${det.height}px | 
-                            📍 ${det.box_pixels[0]},${det.box_pixels[1]}
-                            ${isNote ? ' | 🎯 NOTE' : ''}
+                            <span>📏 ${det.width}x${det.height}</span>
+                            <span>📍 ${det.box_pixels[0]},${det.box_pixels[1]}</span>
+                            <span>🎯 ${det.is_note ? 'NOTE' : 'Objet'}</span>
                         </div>
                     </div>
                 `;
             });
-            
-            // Ajouter "et X autres" si plus de 10
-            if (detections.length > 10) {
-                html += `
-                    <div style="text-align: center; color: #64748b; padding: 10px; font-size: 0.9rem;">
-                        ... et ${detections.length - 10} autres détections
-                    </div>
-                `;
-            }
             
             detectionsList.innerHTML = html;
         }
@@ -807,10 +811,8 @@
             // Trier par taille (les plus grandes d'abord)
             detections.sort((a, b) => b.area - a.area);
             
-            // Limiter à 20 dessins pour performance
-            const drawDetections = detections.slice(0, 20);
-            
-            drawDetections.forEach((det, index) => {
+            // Dessiner toutes les détections
+            detections.forEach((det, index) => {
                 const [x1, y1, x2, y2] = det.box;
                 const px1 = x1 * overlay.width;
                 const py1 = y1 * overlay.height;
@@ -821,8 +823,7 @@
                 const height = py2 - py1;
                 
                 // Couleur basée sur la confiance
-                const color = getColorForConfidence(det.confidence);
-                const isNote = det.is_note;
+                const color = getConfidenceColor(det.confidence);
                 
                 // Épaisseur basée sur la confiance
                 const lineWidth = det.confidence > 80 ? 4 : 
@@ -839,151 +840,158 @@
                 
                 // Préparer le texte
                 const label = `${det.class_name} ${det.confidence}%`;
-                
-                // Taille du texte basée sur la taille de la boîte
-                const fontSize = Math.max(12, Math.min(20, width / 15));
-                ctx.font = `bold ${fontSize}px Arial`;
-                
-                // Calculer la largeur du texte
-                const textWidth = ctx.measureText(label).width;
-                const textHeight = fontSize;
+                const fontSize = Math.max(14, Math.min(24, width / 15));
                 
                 // Dessiner le fond du label
                 ctx.fillStyle = color;
-                ctx.fillRect(px1, py1 - textHeight - 5, textWidth + 10, textHeight + 5);
-                
-                // Ajouter un emoji si c'est une note
-                const displayText = isNote ? `🎯 ${label}` : label;
+                const textWidth = ctx.measureText(label).width;
+                ctx.fillRect(px1, py1 - fontSize - 8, textWidth + 20, fontSize + 8);
                 
                 // Dessiner le texte
                 ctx.fillStyle = '#000';
-                ctx.fillText(displayText, px1 + 5, py1 - 5);
+                ctx.font = `bold ${fontSize}px Arial`;
+                ctx.fillText(label, px1 + 10, py1 - 5);
                 
-                // Ajouter l'ID si espace
-                if (width > 100) {
-                    ctx.fillStyle = color;
-                    ctx.font = `bold ${Math.max(10, fontSize - 2)}px Arial`;
-                    ctx.fillText(`#${det.id}`, px2 - 25, py1 + 15);
-                }
+                // Dessiner l'ID
+                ctx.fillStyle = color;
+                ctx.font = `bold ${fontSize - 4}px Arial`;
+                ctx.fillText(`#${det.id}`, px2 - 30, py1 + 20);
             });
         }
         
-        function getColorForConfidence(confidence) {
-            if (confidence >= 80) return '#00ff00';
+        function getConfidenceColor(confidence) {
+            if (confidence >= 90) return '#00ff00';
+            if (confidence >= 70) return '#22c55e';
             if (confidence >= 50) return '#f59e0b';
-            return '#ef4444';
+            if (confidence >= 30) return '#ef4444';
+            return '#6b7280';
         }
         
         // ================================================================
-        // GESTION DES CLASSES
+        // CONTRÔLES DE DÉTECTION
         // ================================================================
-        function updateClassesList(classes) {
-            classesList.innerHTML = '';
+        function startDetection() {
+            if (!isStreaming) {
+                alert("Veuillez d'abord initialiser la caméra");
+                return;
+            }
             
-            classes.forEach((className, index) => {
-                const color = classColors[className] || '#3b82f6';
-                
-                const badge = document.createElement('div');
-                badge.className = 'class-badge';
-                badge.textContent = className;
-                badge.style.background = color;
-                badge.title = `Classe: ${className}`;
-                
-                classesList.appendChild(badge);
-            });
-        }
-        
-        function generateClassColors(classes) {
-            // Palette de couleurs distinctes
-            const colorPalette = [
-                '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-                '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
-                '#14b8a6', '#f43f5e', '#0ea5e9', '#22c55e', '#eab308'
-            ];
+            detectionActive = true;
             
-            classes.forEach((className, index) => {
-                // Notes en vert
-                if (className.toLowerCase().includes('note') || 
-                    className.toLowerCase().includes('score')) {
-                    classColors[className] = '#00ff00';
-                } else {
-                    // Autres classes avec palette cyclique
-                    classColors[className] = colorPalette[index % colorPalette.length];
-                }
-            });
-        }
-        
-        // ================================================================
-        // DÉTECTION AUTOMATIQUE
-        // ================================================================
-        function startAutoDetection() {
-            if (autoInterval) clearInterval(autoInterval);
-            
-            autoInterval = setInterval(() => {
-                if (apiConnected && isStreaming && !isProcessing) {
-                    captureAndDetect();
-                }
-            }, 2000); // Toutes les 2 secondes
-            
-            updateStatus("🔄 Détection auto activée", "connected");
-            addDebugLog("Détection automatique démarrée (2s)");
+            // Démarrer l'intervalle
+            const frequency = parseInt(frequencySelect.value);
+            if (detectionInterval) clearInterval(detectionInterval);
+            detectionInterval = setInterval(detectFrame, frequency);
             
             // Mettre à jour les boutons
-            document.getElementById('btn-auto').disabled = true;
-            document.getElementById('btn-stop').disabled = false;
+            btnStart.disabled = true;
+            btnStart.classList.remove('active');
+            btnStop.disabled = false;
+            btnSingle.disabled = true;
+            
+            // Mettre à jour l'interface
+            updateInfoBubble("🔄 Détection en cours...");
+            addLog(`Détection démarrée (${frequency}ms)`);
         }
         
-        function stopAutoDetection() {
-            if (autoInterval) {
-                clearInterval(autoInterval);
-                autoInterval = null;
-                
-                updateStatus("⏹️ Détection auto arrêtée", "connected");
-                addDebugLog("Détection automatique arrêtée");
-                
-                // Mettre à jour les boutons
-                document.getElementById('btn-auto').disabled = false;
-                document.getElementById('btn-stop').disabled = true;
+        function stopDetection() {
+            detectionActive = false;
+            
+            // Arrêter l'intervalle
+            if (detectionInterval) {
+                clearInterval(detectionInterval);
+                detectionInterval = null;
             }
+            
+            // Mettre à jour les boutons
+            btnStart.disabled = false;
+            btnStop.disabled = true;
+            btnSingle.disabled = false;
+            
+            // Mettre à jour l'interface
+            updateInfoBubble("⏹️ Détection arrêtée");
+            addLog("Détection arrêtée");
+        }
+        
+        function singleDetection() {
+            if (!isStreaming) {
+                alert("Veuillez d'abord initialiser la caméra");
+                return;
+            }
+            
+            if (detectionActive) {
+                alert("Arrêtez d'abord la détection automatique");
+                return;
+            }
+            
+            detectFrame();
+        }
+        
+        function clearOverlay() {
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            currentDetections = [];
+            updateDetectionsList([]);
+            updateInfoBubble("🧹 Affichage effacé");
+            addLog("Affichage effacé");
         }
         
         // ================================================================
         // UTILITAIRES
         // ================================================================
-        function addDebugLog(message) {
+        function updateInfoBubble(message) {
+            infoBubble.textContent = message;
+        }
+        
+        function addLog(message) {
             const timestamp = new Date().toLocaleTimeString();
-            debugInfo.innerHTML = `[${timestamp}] ${message}\n` + debugInfo.innerHTML;
+            const logEntry = document.createElement('div');
+            logEntry.style.padding = '3px 0';
+            logEntry.style.borderBottom = '1px solid #334155';
+            logEntry.textContent = `[${timestamp}] ${message}`;
             
-            // Limiter à 20 lignes
-            const lines = debugInfo.innerHTML.split('\n');
-            if (lines.length > 20) {
-                debugInfo.innerHTML = lines.slice(0, 20).join('\n');
+            logsContainer.insertBefore(logEntry, logsContainer.firstChild);
+            
+            // Limiter à 15 lignes
+            while (logsContainer.children.length > 15) {
+                logsContainer.removeChild(logsContainer.lastChild);
             }
         }
         
-        function testConnection() {
-            checkAPI();
-        }
-        
         // ================================================================
-        // ÉVÉNEMENTS
+        // GESTION DES ÉVÉNEMENTS
         // ================================================================
-        document.getElementById('btn-detect').addEventListener('click', captureAndDetect);
-        document.getElementById('btn-auto').addEventListener('click', startAutoDetection);
-        document.getElementById('btn-stop').addEventListener('click', stopAutoDetection);
+        confidenceSlider.addEventListener('input', function() {
+            const value = this.value;
+            confidenceValue.textContent = `${value}%`;
+            addLog(`Seuil confiance ajusté à ${value}%`);
+        });
         
-        // Touche D pour détection manuelle
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyD') {
-                e.preventDefault();
-                captureAndDetect();
+        frequencySelect.addEventListener('change', function() {
+            if (detectionActive) {
+                // Redémarrer avec la nouvelle fréquence
+                const oldActive = detectionActive;
+                stopDetection();
+                
+                setTimeout(() => {
+                    if (oldActive) {
+                        startDetection();
+                    }
+                }, 100);
             }
+            addLog(`Fréquence ajustée à ${this.value}ms`);
         });
         
         // ================================================================
         // DÉMARRAGE
         // ================================================================
         window.addEventListener('DOMContentLoaded', initialize);
+        
+        // Détection automatique après 2 secondes
+        setTimeout(() => {
+            if (isStreaming) {
+                startDetection();
+            }
+        }, 2000);
     </script>
 </body>
 </html>
