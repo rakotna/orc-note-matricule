@@ -56,3 +56,71 @@
     border-left: none;
     border-top: none;
 }
+/* Badge de confiance */
+.confidence-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #666;
+    color: black;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    z-index: 5;
+}
+
+.note-container {
+    position: relative;
+    display: inline-block;
+}
+
+/* Historique */
+.history-note {
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.history-time {
+    color: var(--text-gray);
+    font-size: 0.8rem;
+}
+
+/* Debug panel */
+.debug-panel {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    z-index: 1000;
+}
+
+.debug-info {
+    display: flex;
+    gap: 15px;
+    color: #00FF00;
+}
+
+#fps-counter {
+    color: #FF9900;
+}
+
+/* Animation pour la note détectée */
+@keyframes pulse-green {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); text-shadow: 0 0 20px rgba(0, 255, 0, 0.7); }
+    100% { transform: scale(1); }
+}
+
+.detected-pulse {
+    animation: pulse-green 0.5s ease-in-out;
+}
+
+/* Points de statut */
+.status-online { background: #00FF00; }
+.status-warning { background: #FF9900; }
+.status-error { background: #FF4444; }
