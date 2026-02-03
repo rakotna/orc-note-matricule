@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NoteScanner Pro | Détection IA</title>
+    <title>YOLO Debug - Visualisation des détections</title>
     <style>
         * {
             margin: 0;
@@ -12,91 +12,58 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0f172a;
             color: white;
-            min-height: 100vh;
+            line-height: 1.6;
             padding: 20px;
         }
         
         .container {
-            max-width: 600px;
+            max-width: 1200px;
             margin: 0 auto;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr 350px;
             gap: 20px;
         }
         
         header {
+            grid-column: 1 / -1;
             text-align: center;
             padding: 20px 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #1e293b;
         }
         
         h1 {
             font-size: 2.2rem;
-            background: linear-gradient(90deg, #00ff00, #4ade80);
+            background: linear-gradient(90deg, #00ff00, #3b82f6);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
         
         .subtitle {
             color: #94a3b8;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
         
-        .status-card {
+        /* CAMÉRA */
+        .camera-section {
             background: #1e293b;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 15px;
-            border-left: 4px solid #666;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .status-card.connected {
-            border-left-color: #00ff00;
-        }
-        
-        .status-card.error {
-            border-left-color: #ff4444;
-        }
-        
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-        
-        .status-dot.connecting {
-            background: #ff9900;
-            animation: pulse 1s infinite;
-        }
-        
-        .status-dot.connected {
-            background: #00ff00;
-            box-shadow: 0 0 10px #00ff00;
-            animation: pulse 2s infinite;
-        }
-        
-        .status-dot.error {
-            background: #ff4444;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            border: 1px solid #334155;
         }
         
         .camera-container {
             position: relative;
-            border-radius: 16px;
+            border-radius: 12px;
             overflow: hidden;
             aspect-ratio: 4/3;
             background: #000;
-            border: 2px solid #334155;
+            margin-bottom: 15px;
         }
         
         #video {
@@ -114,237 +81,409 @@
             pointer-events: none;
         }
         
-        .results {
+        /* CONTROLES */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: #00ff00;
+            color: #000;
+        }
+        
+        .btn-primary:hover {
+            background: #00cc00;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        /* PANEL DROIT */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .card {
             background: #1e293b;
             border-radius: 16px;
             padding: 20px;
             border: 1px solid #334155;
         }
         
-        .label {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-            display: block;
-        }
-        
-        .note-display {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        #note-value {
-            font-size: 3rem;
-            font-weight: 800;
+        .card-title {
+            font-size: 1.1rem;
             color: #00ff00;
-            text-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-        }
-        
-        .save-btn {
-            background: #00ff00;
-            color: black;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .save-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 255, 0, 0.3);
-        }
-        
-        .save-btn:disabled {
-            background: #475569;
-            color: #94a3b8;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-        
-        .history {
-            margin-top: 20px;
-        }
-        
-        .history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        #history-count {
-            color: #00ff00;
-            font-weight: bold;
+        .card-title .icon {
+            font-size: 1.2rem;
         }
         
-        #history-list {
-            list-style: none;
-            max-height: 200px;
+        /* STATUT */
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            background: #0f172a;
+            margin-bottom: 5px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.connected {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.connecting {
+            background: #f59e0b;
+            animation: pulse 1s infinite;
+        }
+        
+        .status-dot.error {
+            background: #ef4444;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* DÉTECTIONS */
+        .detections-list {
+            max-height: 400px;
             overflow-y: auto;
         }
         
-        .history-item {
+        .detection-item {
             background: #0f172a;
-            padding: 12px 16px;
+            padding: 12px;
             margin-bottom: 8px;
             border-radius: 10px;
-            border-left: 4px solid #00ff00;
+            border-left: 4px solid #3b82f6;
+            transition: all 0.2s;
+        }
+        
+        .detection-item:hover {
+            transform: translateX(5px);
+            background: #1a2336;
+        }
+        
+        .detection-item.note {
+            border-left-color: #00ff00;
+            background: rgba(0, 255, 0, 0.05);
+        }
+        
+        .detection-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 5px;
         }
         
-        .history-time {
-            color: #94a3b8;
-            font-size: 0.85rem;
+        .detection-class {
+            font-weight: bold;
+            font-size: 1rem;
         }
         
-        .debug {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 0.8rem;
-            color: #00ff00;
-        }
-        
-        .instructions {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-        
-        .api-url {
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid #00ff00;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            word-break: break-all;
-            font-family: monospace;
-        }
-        
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            margin: 15px 0;
-        }
-        
-        .test-btn {
+        .detection-confidence {
             background: #3b82f6;
             color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            flex: 1;
-        }
-        
-        .test-btn:hover {
-            background: #2563eb;
-        }
-        
-        footer {
-            text-align: center;
-            color: #64748b;
+            padding: 2px 8px;
+            border-radius: 12px;
             font-size: 0.8rem;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #334155;
+            font-weight: bold;
         }
+        
+        .detection-note .detection-confidence {
+            background: #00ff00;
+            color: #000;
+        }
+        
+        .detection-details {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+        
+        /* STATISTIQUES */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .stat-item {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00ff00;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        
+        /* CLASSES */
+        .classes-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .class-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        /* DEBUG INFO */
+        .debug-info {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* LÉGENDE DES COULEURS */
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        
+        .color-note { background: #00ff00; }
+        .color-object { background: #3b82f6; }
+        .color-high-conf { background: #00ff00; }
+        .color-medium-conf { background: #f59e0b; }
+        .color-low-conf { background: #ef4444; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📝 NoteScanner Pro</h1>
-            <p class="subtitle">Détection de notes par IA en temps réel</p>
+            <h1>🔍 YOLO DEBUG VISUALIZER</h1>
+            <p class="subtitle">Visualisation en temps réel des détections YOLO avec labels et boîtes</p>
         </header>
         
-        <!-- Statut de connexion -->
-        <div class="status-card" id="status-card">
-            <div class="status-dot connecting" id="status-dot"></div>
-            <div id="status-text">Connexion en cours...</div>
-        </div>
-        
-        <!-- Zone caméra -->
-        <div class="camera-container">
-            <video id="video" autoplay playsinline></video>
-            <canvas id="overlay"></canvas>
-        </div>
-        
-        <!-- Résultats -->
-        <div class="results">
-            <div class="note-display">
-                <div>
-                    <span class="label">NOTE DÉTECTÉE</span>
-                    <div id="note-value">---</div>
-                </div>
-                <button id="btn-save" class="save-btn" disabled>
-                    💾 SAUVEGARDER
-                </button>
+        <!-- SECTION GAUCHE : CAMÉRA ET VISUALISATION -->
+        <div class="camera-section">
+            <div class="camera-container">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="overlay"></canvas>
             </div>
             
-            <div class="history">
-                <div class="history-header">
-                    <span class="label">HISTORIQUE</span>
-                    <span id="history-count">0 notes</span>
+            <!-- LÉGENDE -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color color-note"></div>
+                    <span>Notes détectées</span>
                 </div>
-                <ul id="history-list"></ul>
+                <div class="legend-item">
+                    <div class="legend-color color-object"></div>
+                    <span>Autres objets</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color color-high-conf"></div>
+                    <span>Confiance > 80%</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color color-medium-conf"></div>
+                    <span>Confiance 50-80%</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color color-low-conf"></div>
+                    <span>Confiance < 50%</span>
+                </div>
             </div>
         </div>
         
-        <!-- Boutons de test -->
-        <div class="btn-group">
-            <button id="btn-test-api" class="test-btn">🔍 TESTER L'API</button>
-            <button id="btn-manual-detect" class="test-btn">📸 DÉTECTION MANUELLE</button>
-        </div>
-        
-        <!-- Informations de débogage -->
-        <div class="debug">
-            <div id="debug-info">Initialisation...</div>
-            <div class="api-url" id="api-url-display">
-                URL API: <span id="current-url">Chargement...</span>
+        <!-- SECTION DROITE : INFORMATIONS -->
+        <div class="right-panel">
+            <!-- STATUT -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">📡</span>
+                    <span>Statut du système</span>
+                </div>
+                <div class="status">
+                    <div class="status-dot connecting" id="status-dot"></div>
+                    <div id="status-text">Initialisation...</div>
+                </div>
+                <div id="api-info" style="font-size: 0.85rem; color: #94a3b8; margin-top: 10px;">
+                    URL: <span id="api-url">Chargement...</span>
+                </div>
             </div>
-        </div>
-        
-        <!-- Instructions -->
-        <div class="instructions">
-            <h3>🎯 Mode d'emploi :</h3>
-            <ol>
-                <li>Autorisez l'accès à la caméra</li>
-                <li>Pointez vers une note écrite (ex: "14/20", "15.5/20")</li>
-                <li>Le système détectera automatiquement</li>
-                <li>Cliquez sur "SAUVEGARDER" pour enregistrer</li>
-            </ol>
             
-            <p><strong>⚠️ Problème de connexion ?</strong></p>
-            <ul>
-                <li>Vérifiez que le backend Colab est actif</li>
-                <li>L'URL ci-dessus doit correspondre à celle affichée dans Colab</li>
-                <li>Cliquez sur "TESTER L'API" pour vérifier</li>
-            </ul>
+            <!-- CONTRÔLES -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">🎮</span>
+                    <span>Contrôles</span>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="testConnection()">
+                        🔗 Test API
+                    </button>
+                    <button class="btn" onclick="captureAndDetect()" id="btn-detect">
+                        📸 Détecter
+                    </button>
+                    <button class="btn" onclick="startAutoDetection()" id="btn-auto">
+                        🔄 Auto (2s)
+                    </button>
+                    <button class="btn btn-danger" onclick="stopAutoDetection()" id="btn-stop">
+                        ⏹️ Stop
+                    </button>
+                </div>
+            </div>
+            
+            <!-- STATISTIQUES -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">📊</span>
+                    <span>Statistiques</span>
+                </div>
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-detections">0</div>
+                        <div class="stat-label">Détections</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-notes">0</div>
+                        <div class="stat-label">Notes</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-time">0ms</div>
+                        <div class="stat-label">Temps YOLO</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-fps">0</div>
+                        <div class="stat-label">FPS</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- DÉTECTIONS ACTIVES -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">📦</span>
+                    <span>Détections actives (<span id="detections-count">0</span>)</span>
+                </div>
+                <div class="detections-list" id="detections-list">
+                    <div style="text-align: center; color: #64748b; padding: 20px;">
+                        En attente de détections...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- CLASSES DÉTECTÉES -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">🏷️</span>
+                    <span>Classes détectées</span>
+                </div>
+                <div class="classes-list" id="classes-list">
+                    <div style="color: #64748b; font-style: italic;">
+                        Chargement des classes...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- LOGS DEBUG -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">🐛</span>
+                    <span>Logs de débogage</span>
+                </div>
+                <div class="debug-info" id="debug-info">
+                    Initialisation du système...
+                </div>
+            </div>
         </div>
-        
-        <footer>
-            <p>NoteScanner Pro v3.0 | Backend: Google Colab + ngrok | Frontend: GitHub Pages</p>
-            <p>Powered by YOLOv8 & PaddleOCR</p>
-        </footer>
     </div>
-    
+
     <script>
         // ================================================================
-        // CONFIGURATION - À MODIFIER !
+        // CONFIGURATION
         // ================================================================
-        // ⚠️ REMPLACEZ PAR VOTRE URL NGROK DE COLAB ⚠️
         const API_URL = "https://thi-creasy-lightsomely.ngrok-free.dev";
         
         // ================================================================
@@ -353,18 +492,20 @@
         const video = document.getElementById('video');
         const overlay = document.getElementById('overlay');
         const ctx = overlay.getContext('2d');
-        const noteValue = document.getElementById('note-value');
-        const btnSave = document.getElementById('btn-save');
-        const btnTestAPI = document.getElementById('btn-test-api');
-        const btnManualDetect = document.getElementById('btn-manual-detect');
-        const historyList = document.getElementById('history-list');
-        const historyCount = document.getElementById('history-count');
-        const statusCard = document.getElementById('status-card');
         const statusDot = document.getElementById('status-dot');
         const statusText = document.getElementById('status-text');
+        const apiUrlDisplay = document.getElementById('api-url');
+        const detectionsList = document.getElementById('detections-list');
+        const detectionsCount = document.getElementById('detections-count');
+        const classesList = document.getElementById('classes-list');
         const debugInfo = document.getElementById('debug-info');
-        const currentUrlDisplay = document.getElementById('current-url');
-        const apiUrlDisplay = document.getElementById('api-url-display');
+        const statsGrid = document.getElementById('stats-grid');
+        
+        // Éléments statistiques
+        const statDetections = document.getElementById('stat-detections');
+        const statNotes = document.getElementById('stat-notes');
+        const statTime = document.getElementById('stat-time');
+        const statFps = document.getElementById('stat-fps');
         
         // ================================================================
         // VARIABLES GLOBALES
@@ -372,111 +513,99 @@
         let isStreaming = false;
         let isProcessing = false;
         let apiConnected = false;
-        let detectionCount = 0;
-        let detectionInterval = null;
+        let autoInterval = null;
+        let detectionFrames = 0;
+        let lastFpsUpdate = Date.now();
+        let fps = 0;
+        let classColors = {};
+        let allClasses = [];
         
         // ================================================================
-        // FONCTIONS D'INITIALISATION
+        // INITIALISATION
         // ================================================================
-        async function initializeApp() {
-            console.log("🚀 Démarrage de NoteScanner...");
+        async function initialize() {
+            console.log("🚀 Initialisation du système...");
+            apiUrlDisplay.textContent = API_URL;
             
-            // Afficher l'URL API
-            currentUrlDisplay.textContent = API_URL;
-            console.log(`🌐 URL API: ${API_URL}`);
-            
-            // 1. Tester la connexion API
-            await testAPIConnection();
+            // 1. Vérifier l'API
+            await checkAPI();
             
             // 2. Initialiser la caméra
             await initializeCamera();
             
-            // 3. Démarrer si tout est ok
+            // 3. Mettre à jour l'interface
             if (apiConnected && isStreaming) {
-                startAutoDetection();
-                updateStatus("✅ Système prêt - Pointez vers une note", "connected");
+                updateStatus("✅ Système prêt", "connected");
+                addDebugLog("Système initialisé avec succès");
             }
         }
         
         // ================================================================
-        // TEST DE CONNEXION API
+        // GESTION API
         // ================================================================
-        async function testAPIConnection() {
-            updateStatus("Connexion au serveur...", "connecting");
-            debugInfo.textContent = `Test de ${API_URL}/health...`;
+        async function checkAPI() {
+            updateStatus("Connexion API...", "connecting");
+            addDebugLog(`Test de connexion à: ${API_URL}`);
             
             try {
                 const response = await fetch(`${API_URL}/health`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
-                    mode: 'cors',
-                    cache: 'no-store'
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log("✅ API connectée:", data);
                     
                     apiConnected = true;
-                    updateStatus(`✅ Serveur connecté (${data.gpu ? 'GPU' : 'CPU'})`, "connected");
-                    debugInfo.textContent = `Serveur: ${data.status} | Version: ${data.version}`;
+                    updateStatus(`✅ API connectée`, "connected");
                     
+                    // Récupérer les classes
+                    if (data.class_names) {
+                        allClasses = Object.values(data.class_names);
+                        updateClassesList(allClasses);
+                        generateClassColors(allClasses);
+                    }
+                    
+                    addDebugLog(`API OK - Classes: ${allClasses.length} | GPU: ${data.gpu}`);
                     return true;
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
             } catch (error) {
-                console.error("❌ Erreur connexion API:", error);
-                
                 apiConnected = false;
-                updateStatus(`❌ Serveur inaccessible: ${error.message}`, "error");
-                debugInfo.textContent = `Erreur: ${error.message}`;
-                
-                // Afficher l'erreur en rouge
-                apiUrlDisplay.style.borderColor = '#ff4444';
-                apiUrlDisplay.style.background = 'rgba(255, 68, 68, 0.1)';
-                
-                return false;
+                updateStatus(`❌ API hors ligne`, "error");
+                addDebugLog(`Erreur API: ${error.message}`);
             }
+            
+            return false;
         }
         
         function updateStatus(message, type) {
             statusText.textContent = message;
-            statusCard.className = `status-card ${type}`;
             statusDot.className = `status-dot ${type}`;
         }
         
         // ================================================================
-        // INITIALISATION CAMÉRA
+        // GESTION CAMÉRA
         // ================================================================
         async function initializeCamera() {
             try {
                 updateStatus("Initialisation caméra...", "connecting");
                 
-                // Demander l'accès à la caméra
-                const constraints = {
+                const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: "environment",
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
                     }
-                };
+                });
                 
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 
-                // Attendre que la vidéo soit prête
                 await new Promise((resolve) => {
                     video.onloadedmetadata = () => {
                         overlay.width = video.videoWidth;
                         overlay.height = video.videoHeight;
-                        
-                        console.log(`📷 Caméra: ${video.videoWidth}x${video.videoHeight}`);
                         isStreaming = true;
+                        addDebugLog(`Caméra: ${video.videoWidth}x${video.videoHeight}`);
                         resolve();
                     };
                 });
@@ -484,36 +613,21 @@
                 return true;
                 
             } catch (error) {
-                console.error("❌ Erreur caméra:", error);
-                updateStatus("❌ Erreur d'accès à la caméra", "error");
-                debugInfo.textContent = `Erreur caméra: ${error.message}`;
+                isStreaming = false;
+                updateStatus("❌ Erreur caméra", "error");
+                addDebugLog(`Erreur caméra: ${error.message}`);
                 
-                // Mode démo sans caméra
+                // Mode démo
                 showDemoMode();
                 return false;
             }
         }
         
         function showDemoMode() {
-            debugInfo.textContent += " | Mode démo activé";
-            noteValue.textContent = "14.5/20";
-            btnSave.disabled = false;
-            
-            // Simuler une détection
-            setTimeout(() => {
-                drawDemoDetection();
-            }, 1000);
-        }
-        
-        function drawDemoDetection() {
-            const x1 = overlay.width * 0.3;
-            const y1 = overlay.height * 0.3;
-            const width = overlay.width * 0.4;
-            const height = overlay.height * 0.4;
-            
-            ctx.strokeStyle = "#00ff00";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(x1, y1, width, height);
+            addDebugLog("Mode démo activé (pas de caméra)");
+            overlay.width = 640;
+            overlay.height = 480;
+            isStreaming = true;
         }
         
         // ================================================================
@@ -523,31 +637,35 @@
             if (!isStreaming || !apiConnected || isProcessing) return;
             
             isProcessing = true;
+            detectionFrames++;
             
             try {
-                debugInfo.textContent = "Capture en cours...";
+                addDebugLog("Capture en cours...");
                 
                 // Capturer une frame
                 const imageBlob = await captureFrame();
                 if (!imageBlob) return;
                 
                 // Envoyer au backend
-                const result = await sendToBackend(imageBlob);
+                const startTime = performance.now();
+                const result = await sendDetectionRequest(imageBlob);
+                const processingTime = performance.now() - startTime;
                 
                 if (result) {
-                    processDetectionResult(result);
+                    // Traiter les résultats
+                    processDetectionResult(result, processingTime);
                 }
                 
             } catch (error) {
-                console.error("Erreur détection:", error);
-                debugInfo.textContent = `Erreur: ${error.message}`;
+                addDebugLog(`Erreur détection: ${error.message}`);
+                updateStatus("❌ Erreur détection", "error");
             } finally {
                 isProcessing = false;
             }
         }
         
         async function captureFrame() {
-            if (!isStreaming || video.readyState !== 4) return null;
+            if (!isStreaming) return null;
             
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
@@ -560,207 +678,312 @@
             tempCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             return new Promise((resolve) => {
-                canvas.toBlob(resolve, 'image/jpeg', 0.85);
+                canvas.toBlob(resolve, 'image/jpeg', 0.9);
             });
         }
         
-        async function sendToBackend(imageBlob) {
+        async function sendDetectionRequest(imageBlob) {
             const formData = new FormData();
-            formData.append('frame', imageBlob, 'capture.jpg');
+            formData.append('frame', imageBlob, 'frame.jpg');
             
             try {
                 const response = await fetch(`${API_URL}/detect`, {
                     method: 'POST',
                     body: formData,
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true',
-                        'Accept': 'application/json'
-                    },
-                    mode: 'cors'
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return await response.json();
                 
             } catch (error) {
-                console.error("Erreur backend:", error);
-                
-                // Si erreur réseau, vérifier l'API
-                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                    apiConnected = false;
-                    updateStatus("❌ Connexion perdue", "error");
-                }
-                
-                return null;
+                throw error;
             }
         }
         
-        function processDetectionResult(result) {
-            debugInfo.textContent = `Traitement: ${result.processing_time_ms || 0}ms`;
+        // ================================================================
+        // TRAITEMENT DES RÉSULTATS
+        // ================================================================
+        function processDetectionResult(result, processingTime) {
+            // Mettre à jour les statistiques
+            updateStatistics(result, processingTime);
             
+            // Mettre à jour la liste des détections
+            updateDetectionsList(result.detections);
+            
+            // Dessiner sur l'overlay
+            drawDetections(result.detections);
+            
+            // Mettre à jour le statut
+            updateStatus(`✅ ${result.detections.length} détections`, "connected");
+            
+            // Debug log
+            addDebugLog(`Détections: ${result.detections.length} | Temps: ${processingTime.toFixed(0)}ms`);
+        }
+        
+        function updateStatistics(result, processingTime) {
+            const stats = result.statistics || {};
+            
+            // Mettre à jour les stats
+            statDetections.textContent = stats.total_detections || result.detections.length;
+            statNotes.textContent = stats.note_detections_count || 
+                result.detections.filter(d => d.is_note).length;
+            statTime.textContent = `${stats.yolo_time_ms || 0}ms`;
+            
+            // Calculer FPS
+            const now = Date.now();
+            if (now - lastFpsUpdate >= 1000) {
+                fps = detectionFrames;
+                detectionFrames = 0;
+                lastFpsUpdate = now;
+            }
+            statFps.textContent = fps;
+        }
+        
+        function updateDetectionsList(detections) {
+            detectionsCount.textContent = detections.length;
+            
+            if (detections.length === 0) {
+                detectionsList.innerHTML = `
+                    <div style="text-align: center; color: #64748b; padding: 20px;">
+                        Aucune détection
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            // Trier par confiance (décroissant)
+            detections.sort((a, b) => b.confidence - a.confidence);
+            
+            // Limiter à 10 affichages
+            const displayDetections = detections.slice(0, 10);
+            
+            displayDetections.forEach((det, index) => {
+                const isNote = det.is_note;
+                const color = getColorForConfidence(det.confidence);
+                
+                html += `
+                    <div class="detection-item ${isNote ? 'note' : ''}" data-id="${det.id}">
+                        <div class="detection-header">
+                            <div class="detection-class">
+                                ${det.class_name} #${det.id}
+                            </div>
+                            <div class="detection-confidence" style="background: ${color}">
+                                ${det.confidence}%
+                            </div>
+                        </div>
+                        <div class="detection-details">
+                            📏 ${det.width}x${det.height}px | 
+                            📍 ${det.box_pixels[0]},${det.box_pixels[1]}
+                            ${isNote ? ' | 🎯 NOTE' : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Ajouter "et X autres" si plus de 10
+            if (detections.length > 10) {
+                html += `
+                    <div style="text-align: center; color: #64748b; padding: 10px; font-size: 0.9rem;">
+                        ... et ${detections.length - 10} autres détections
+                    </div>
+                `;
+            }
+            
+            detectionsList.innerHTML = html;
+        }
+        
+        // ================================================================
+        // DESSIN SUR L'OVERLAY
+        // ================================================================
+        function drawDetections(detections) {
             // Effacer l'overlay
             ctx.clearRect(0, 0, overlay.width, overlay.height);
             
-            // Traiter la note
-            if (result.note && result.note !== "---") {
-                // Mettre à jour l'affichage
-                noteValue.textContent = result.note;
-                noteValue.style.animation = 'none';
-                setTimeout(() => {
-                    noteValue.style.animation = 'pulse 0.5s ease-in-out';
-                }, 10);
+            if (!detections || detections.length === 0) return;
+            
+            // Trier par taille (les plus grandes d'abord)
+            detections.sort((a, b) => b.area - a.area);
+            
+            // Limiter à 20 dessins pour performance
+            const drawDetections = detections.slice(0, 20);
+            
+            drawDetections.forEach((det, index) => {
+                const [x1, y1, x2, y2] = det.box;
+                const px1 = x1 * overlay.width;
+                const py1 = y1 * overlay.height;
+                const px2 = x2 * overlay.width;
+                const py2 = y2 * overlay.height;
                 
-                // Activer le bouton
-                btnSave.disabled = false;
+                const width = px2 - px1;
+                const height = py2 - py1;
                 
-                // Dessiner la détection
-                if (result.detections && result.detections.length > 0) {
-                    drawDetection(result.detections[0]);
+                // Couleur basée sur la confiance
+                const color = getColorForConfidence(det.confidence);
+                const isNote = det.is_note;
+                
+                // Épaisseur basée sur la confiance
+                const lineWidth = det.confidence > 80 ? 4 : 
+                                 det.confidence > 50 ? 3 : 2;
+                
+                // Dessiner le rectangle
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.strokeRect(px1, py1, width, height);
+                
+                // Ajouter un fond semi-transparent
+                ctx.fillStyle = color.replace(')', ', 0.1)').replace('rgb', 'rgba');
+                ctx.fillRect(px1, py1, width, height);
+                
+                // Préparer le texte
+                const label = `${det.class_name} ${det.confidence}%`;
+                
+                // Taille du texte basée sur la taille de la boîte
+                const fontSize = Math.max(12, Math.min(20, width / 15));
+                ctx.font = `bold ${fontSize}px Arial`;
+                
+                // Calculer la largeur du texte
+                const textWidth = ctx.measureText(label).width;
+                const textHeight = fontSize;
+                
+                // Dessiner le fond du label
+                ctx.fillStyle = color;
+                ctx.fillRect(px1, py1 - textHeight - 5, textWidth + 10, textHeight + 5);
+                
+                // Ajouter un emoji si c'est une note
+                const displayText = isNote ? `🎯 ${label}` : label;
+                
+                // Dessiner le texte
+                ctx.fillStyle = '#000';
+                ctx.fillText(displayText, px1 + 5, py1 - 5);
+                
+                // Ajouter l'ID si espace
+                if (width > 100) {
+                    ctx.fillStyle = color;
+                    ctx.font = `bold ${Math.max(10, fontSize - 2)}px Arial`;
+                    ctx.fillText(`#${det.id}`, px2 - 25, py1 + 15);
                 }
-                
-                updateStatus(`✅ ${result.note} détectée`, "connected");
-                
-            } else {
-                noteValue.textContent = "---";
-                btnSave.disabled = true;
-                updateStatus("🔍 Recherche de note...", "connected");
-            }
+            });
         }
         
-        function drawDetection(detection) {
-            const [x1, y1, x2, y2] = detection.box;
-            const conf = detection.conf;
-            const text = detection.text;
+        function getColorForConfidence(confidence) {
+            if (confidence >= 80) return '#00ff00';
+            if (confidence >= 50) return '#f59e0b';
+            return '#ef4444';
+        }
+        
+        // ================================================================
+        // GESTION DES CLASSES
+        // ================================================================
+        function updateClassesList(classes) {
+            classesList.innerHTML = '';
             
-            const px1 = x1 * overlay.width;
-            const py1 = y1 * overlay.height;
-            const px2 = x2 * overlay.width;
-            const py2 = y2 * overlay.height;
+            classes.forEach((className, index) => {
+                const color = classColors[className] || '#3b82f6';
+                
+                const badge = document.createElement('div');
+                badge.className = 'class-badge';
+                badge.textContent = className;
+                badge.style.background = color;
+                badge.title = `Classe: ${className}`;
+                
+                classesList.appendChild(badge);
+            });
+        }
+        
+        function generateClassColors(classes) {
+            // Palette de couleurs distinctes
+            const colorPalette = [
+                '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+                '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
+                '#14b8a6', '#f43f5e', '#0ea5e9', '#22c55e', '#eab308'
+            ];
             
-            const width = px2 - px1;
-            const height = py2 - py1;
-            
-            // Rectangle
-            ctx.strokeStyle = "#00ff00";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(px1, py1, width, height);
-            
-            // Texte
-            ctx.fillStyle = "#00ff00";
-            ctx.font = "bold 16px Arial";
-            ctx.fillText(text || "NOTE", px1 + 5, py1 - 10);
+            classes.forEach((className, index) => {
+                // Notes en vert
+                if (className.toLowerCase().includes('note') || 
+                    className.toLowerCase().includes('score')) {
+                    classColors[className] = '#00ff00';
+                } else {
+                    // Autres classes avec palette cyclique
+                    classColors[className] = colorPalette[index % colorPalette.length];
+                }
+            });
         }
         
         // ================================================================
         // DÉTECTION AUTOMATIQUE
         // ================================================================
         function startAutoDetection() {
-            // Arrêter si existe déjà
-            if (detectionInterval) {
-                clearInterval(detectionInterval);
-            }
+            if (autoInterval) clearInterval(autoInterval);
             
-            // Démarrer toutes les 2 secondes
-            detectionInterval = setInterval(() => {
+            autoInterval = setInterval(() => {
                 if (apiConnected && isStreaming && !isProcessing) {
                     captureAndDetect();
                 }
-            }, 2000);
+            }, 2000); // Toutes les 2 secondes
+            
+            updateStatus("🔄 Détection auto activée", "connected");
+            addDebugLog("Détection automatique démarrée (2s)");
+            
+            // Mettre à jour les boutons
+            document.getElementById('btn-auto').disabled = true;
+            document.getElementById('btn-stop').disabled = false;
+        }
+        
+        function stopAutoDetection() {
+            if (autoInterval) {
+                clearInterval(autoInterval);
+                autoInterval = null;
+                
+                updateStatus("⏹️ Détection auto arrêtée", "connected");
+                addDebugLog("Détection automatique arrêtée");
+                
+                // Mettre à jour les boutons
+                document.getElementById('btn-auto').disabled = false;
+                document.getElementById('btn-stop').disabled = true;
+            }
         }
         
         // ================================================================
-        // GESTION HISTORIQUE
+        // UTILITAIRES
         // ================================================================
-        function saveToHistory() {
-            const note = noteValue.textContent;
-            if (note === "---") return;
+        function addDebugLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugInfo.innerHTML = `[${timestamp}] ${message}\n` + debugInfo.innerHTML;
             
-            const now = new Date();
-            const timeString = now.toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            const historyItem = document.createElement('li');
-            historyItem.className = 'history-item';
-            historyItem.innerHTML = `
-                <span>${note}</span>
-                <span class="history-time">${timeString}</span>
-            `;
-            
-            // Ajouter au début
-            historyList.insertBefore(historyItem, historyList.firstChild);
-            
-            // Limiter à 10 éléments
-            while (historyList.children.length > 10) {
-                historyList.removeChild(historyList.lastChild);
+            // Limiter à 20 lignes
+            const lines = debugInfo.innerHTML.split('\n');
+            if (lines.length > 20) {
+                debugInfo.innerHTML = lines.slice(0, 20).join('\n');
             }
-            
-            // Mettre à jour le compteur
-            detectionCount++;
-            historyCount.textContent = `${detectionCount} note${detectionCount !== 1 ? 's' : ''}`;
-            
-            // Désactiver le bouton
-            btnSave.disabled = true;
-            
-            // Feedback
-            updateStatus("💾 Note sauvegardée", "connected");
-            setTimeout(() => {
-                if (apiConnected) {
-                    updateStatus("✅ Prêt", "connected");
-                }
-            }, 2000);
+        }
+        
+        function testConnection() {
+            checkAPI();
         }
         
         // ================================================================
         // ÉVÉNEMENTS
         // ================================================================
-        btnSave.addEventListener('click', saveToHistory);
+        document.getElementById('btn-detect').addEventListener('click', captureAndDetect);
+        document.getElementById('btn-auto').addEventListener('click', startAutoDetection);
+        document.getElementById('btn-stop').addEventListener('click', stopAutoDetection);
         
-        btnTestAPI.addEventListener('click', async () => {
-            const connected = await testAPIConnection();
-            if (connected) {
-                alert("✅ Connexion API réussie !");
-            } else {
-                alert("❌ Échec de connexion. Vérifiez :\n1. Le backend Colab est actif\n2. L'URL dans le code est correcte\n3. Ngrok n'a pas expiré");
-            }
-        });
-        
-        btnManualDetect.addEventListener('click', () => {
-            if (apiConnected && isStreaming) {
-                updateStatus("Détection manuelle...", "connecting");
-                captureAndDetect();
-            } else {
-                alert("Veuillez d'abord initialiser la caméra et vérifier la connexion API.");
-            }
-        });
-        
-        // Touche Espace
+        // Touche D pour détection manuelle
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && !btnSave.disabled) {
+            if (e.code === 'KeyD') {
                 e.preventDefault();
-                saveToHistory();
+                captureAndDetect();
             }
         });
         
         // ================================================================
         // DÉMARRAGE
         // ================================================================
-        document.addEventListener('DOMContentLoaded', initializeApp);
-        
-        // Style pour l'animation de pulse
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes pulse {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.05); }
-                100% { transform: scale(1); }
-            }
-        `;
-        document.head.appendChild(style);
+        window.addEventListener('DOMContentLoaded', initialize);
     </script>
 </body>
 </html>
